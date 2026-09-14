@@ -1,0 +1,16 @@
+---
+description: 버전을 올린 뒤에는 GitHub main에 커밋하고 푸시한다
+alwaysApply: true
+---
+
+# GitHub 자동 배포
+
+프로그램 동작을 고치거나 기능을 넣어 버전을 올렸으면, 사용자가 따로 말하지 않아도 GitHub에 올린다. 설치된 프로그램이 `Directory.Build.props`와 `dist` 설치 파일을 보고 업데이트를 받기 때문이다.
+
+1. 본 프로그램을 Release로 빌드한 뒤 설치 프로젝트도 Release로 빌드해 `dist/아맛다보고서Install.exe`를 갱신한다
+2. 시크릿(`.env`, 자격 증명)은 빼고 관련 파일을 커밋한다
+3. `origin`(`https://github.com/ermuks/Amatha.git`)의 `main`에 푸시한다
+
+커밋 메시지는 왜 바꿨는지 한두 문장으로 적는다.
+
+규칙 파일만 바꾸거나 버전만 손본 작업, 또는 사용자가 올리지 말라고 한 경우에는 커밋·푸시하지 않는다.

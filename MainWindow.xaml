@@ -37,13 +37,21 @@
                         ToolTip="메뉴">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border Background="Transparent">
+                            <Border x:Name="Bd" Background="Transparent">
                                 <TextBlock Text="☰"
                                            FontSize="18"
                                            Foreground="#F4F7FA"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center" />
                             </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#526887" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#33455C" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
