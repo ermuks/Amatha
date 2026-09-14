@@ -1,6 +1,6 @@
 # 아맛다보고서 (Amaranth10API)
 
-현재 버전은 `Directory.Build.props` 기준 **1.1.3**입니다.
+현재 버전은 `Directory.Build.props` 기준 **1.1.4**입니다.
 
 TEIA Amaranth 10 ERP에 로그인해, **작성하지 않은 출장·휴일근무 보고서**를 찾아 알려 주고, 보고서 작성 화면을 열어 초안을 채워 주는 Windows 데스크톱 앱입니다. 배포용으로 `Installer` 프로젝트(`아맛다보고서Install.exe`)가 본 프로그램 zip을 내장해 설치합니다. 실행 중 GitHub(`ermuks/Amatha`)에 더 새 버전이 있으면 창 아래에서 설치기를 받아 올립니다.
 
@@ -56,7 +56,7 @@ WebView2 Runtime(Edge 기반)이 없으면 보고서 작성 창과 사용자 매
 
 ```
 Amaranth10API/
-├── Directory.Build.props     앱·설치기 공통 버전 (1.1.3)
+├── Directory.Build.props     앱·설치기 공통 버전 (1.1.4)
 ├── AppVersion.cs             표시용 버전 문자열·비교용 Version
 ├── Amaranth10API.csproj      본 프로그램, 매뉴얼 복사
 ├── app.manifest              DPI / Windows 10 호환
@@ -170,7 +170,7 @@ SettingsStore        %AppData%\아맛다보고서\settings.json
 
 ### 5.3 메인 셸 (`MainWindow`)
 
-로그인 전에는 왼쪽 패널이 숨겨집니다. 대시보드에 들어가면 햄버거 메뉴가 나타납니다. 창 아래 상태 줄 오른쪽은 `ver 1.1.3` (`AppVersion.FooterLabel`), 왼쪽은 새 버전이 있을 때만 “새 버전이 있습니다. (v…)” 링크입니다.
+로그인 전에는 왼쪽 패널이 숨겨집니다. 대시보드에 들어가면 햄버거 메뉴가 나타납니다. 창 아래 상태 줄 오른쪽은 `ver 1.1.4` (`AppVersion.FooterLabel`), 왼쪽은 새 버전이 있을 때만 “새 버전이 있습니다. (v…)” 링크입니다.
 
 | 메뉴 | 위치 | 동작 |
 | --- | --- | --- |
@@ -398,8 +398,8 @@ MAJOR(첫 번째): 대규모 변경
 
 `AppVersion`은 `AssemblyInformationalVersion`을 읽고(`+` git 해시는 자름), 없으면 `Major.Minor.Build`를 씁니다. `Current`는 비교용 `System.Version`입니다.
 
-- 본 프로그램 하단: `ver 1.1.3`
-- 설치기 첫 버튼: `아맛다보고서 1.1.3 설치`
+- 본 프로그램 하단: `ver 1.1.4`
+- 설치기 첫 버튼: `아맛다보고서 1.1.4 설치`
 
 버전을 올릴 때는 `Directory.Build.props`만 고치면 됩니다. GitHub `main`의 같은 파일과 최신 릴리스 태그가 업데이트 확인의 기준입니다.
 
@@ -486,7 +486,7 @@ User-Agent는 `AmathaBogoso/{버전}`입니다.
 
 | 파일 | 역할 |
 | --- | --- |
-| `Directory.Build.props` | 공통 버전 1.1.3 |
+| `Directory.Build.props` | 공통 버전 1.1.4 |
 | `AppVersion.cs` | 하단·설치 버튼 문자열, `Current` |
 | `App.xaml.cs` | 단일 인스턴스, TLS, 알림 초기화, 공유 Client, `--autostart` |
 | `MainWindow.xaml.cs` | 탐색, 트레이, 자동 로그인, 사이드 메뉴, 설정, 업데이트 링크 |

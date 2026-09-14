@@ -10,30 +10,42 @@ public sealed class AppRuntime
 {
     public static AppRuntime Current { get; } = new();
 
-    private readonly DispatcherTimer _refreshTimer = new();
+    private DispatcherTimer _refreshTimer = new();
     private bool _wasOnline = NetworkInterface.GetIsNetworkAvailable();
     private bool _reloginInProgress;
 
     private AppRuntime()
     {
         Settings = SettingsStore.Load();
-        Settings.PropertyChanged += (_, e) =>
-        {
-            SettingsStore.Save(Settings);
-            RestartRefreshTimer();
-            if (e.PropertyName is nameof(AppSettings.RunOnWindowsStartup) or null)
-            {
-                StartupRegistration.Apply(Settings.RunOnWindowsStartup);
-            }
-
-            if (e.PropertyName is nameof(AppSettings.AutoLoginEnabled))
-            {
-                SyncSavedLogin();
-            }
-        };
-
-        _refreshTimer.Tick += async (_, _) => await RefreshQuietAsync();
+        Settings.PropertyChanged += SettingsOnPropertyChanged;
+        _refreshTimer.Tick += RefreshTimerOnTick;
         NetworkChange.NetworkAvailabilityChanged += NetworkAvailabilityChanged;
+    }
+
+    private void SettingsOnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        SettingsStore.Save(Settings);
+        if (e.PropertyName is nameof(AppSettings.NotificationIntervalSeconds)
+            or nameof(AppSettings.NotificationsEnabled)
+            or null)
+        {
+            RestartRefreshTimer();
+        }
+
+        if (e.PropertyName is nameof(AppSettings.RunOnWindowsStartup) or null)
+        {
+            StartupRegistration.Apply(Settings.RunOnWindowsStartup);
+        }
+
+        if (e.PropertyName is nameof(AppSettings.AutoLoginEnabled))
+        {
+            SyncSavedLogin();
+        }
+    }
+
+    private async void RefreshTimerOnTick(object? sender, EventArgs e)
+    {
+        await RefreshQuietAsync();
     }
 
     public AppSettings Settings { get; }
@@ -128,13 +140,19 @@ public sealed class AppRuntime
     public void RestartRefreshTimer()
     {
         _refreshTimer.Stop();
+        _refreshTimer.Tick -= RefreshTimerOnTick;
+
         if (!IsLoggedIn || !Settings.NotificationsEnabled)
         {
             return;
         }
 
         int seconds = Math.Max(10, Settings.NotificationIntervalSeconds);
-        _refreshTimer.Interval = TimeSpan.FromSeconds(seconds);
+        _refreshTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(seconds)
+        };
+        _refreshTimer.Tick += RefreshTimerOnTick;
         _refreshTimer.Start();
     }
 

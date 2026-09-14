@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -440,7 +441,14 @@ public partial class MainWindow : Window
 
     private void CloseSettings_Click(object sender, RoutedEventArgs e)
     {
+        BindingOperations.GetBindingExpression(NotificationIntervalBox, TextBox.TextProperty)?.UpdateSource();
         SettingsOverlay.Visibility = Visibility.Collapsed;
+        AppRuntime.Current.RestartRefreshTimer();
+    }
+
+    private void NotificationInterval_LostFocus(object sender, RoutedEventArgs e)
+    {
+        BindingOperations.GetBindingExpression(NotificationIntervalBox, TextBox.TextProperty)?.UpdateSource();
         AppRuntime.Current.RestartRefreshTimer();
     }
 

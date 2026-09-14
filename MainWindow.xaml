@@ -115,12 +115,14 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="#2A3548"
                                            Text="알림 새로고침 간격 (초)" />
-                                <TextBox Grid.Column="1"
+                                <TextBox x:Name="NotificationIntervalBox"
+                                         Grid.Column="1"
                                          Style="{StaticResource FieldStyle}"
                                          Height="36" MinHeight="36"
                                          Text="{Binding NotificationIntervalSeconds, UpdateSourceTrigger=PropertyChanged}"
                                          PreviewTextInput="DigitsOnly"
-                                         DataObject.Pasting="DigitsOnlyPasting" />
+                                         DataObject.Pasting="DigitsOnlyPasting"
+                                         LostFocus="NotificationInterval_LostFocus" />
                             </Grid>
                             <CheckBox Content="GUI 화면 띄우기"
                                       IsChecked="{Binding ShowGuiOnNotification}"
