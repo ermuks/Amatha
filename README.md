@@ -1,8 +1,8 @@
 # 아맛다보고서 (Amaranth10API)
 
-현재 버전은 `Directory.Build.props` 기준 **1.0.1**입니다.
+현재 버전은 `Directory.Build.props` 기준 **1.1.1**입니다.
 
-TEIA Amaranth 10 ERP에 로그인해, **작성하지 않은 출장·휴일근무 보고서**를 찾아 알려 주고, 보고서 작성 화면을 열어 초안을 채워 주는 Windows 데스크톱 앱입니다. 배포용으로 `Installer` 프로젝트(`아맛다보고서Install.exe`)가 본 프로그램 zip을 내장해 설치합니다.
+TEIA Amaranth 10 ERP에 로그인해, **작성하지 않은 출장·휴일근무 보고서**를 찾아 알려 주고, 보고서 작성 화면을 열어 초안을 채워 주는 Windows 데스크톱 앱입니다. 배포용으로 `Installer` 프로젝트(`아맛다보고서Install.exe`)가 본 프로그램 zip을 내장해 설치합니다. 실행 중 GitHub(`ermuks/Amatha`)에 더 새 버전이 있으면 창 아래에서 설치기를 받아 올립니다.
 
 표시 이름(어셈블리명·제품명)은 **아맛다보고서**, 코드 루트 네임스페이스와 프로젝트 파일명은 `Amaranth10API`입니다.
 
@@ -56,12 +56,12 @@ WebView2 Runtime(Edge 기반)이 없으면 보고서 작성 창과 사용자 매
 
 ```
 Amaranth10API/
-├── Directory.Build.props     앱·설치기 공통 버전 (1.0.1)
-├── AppVersion.cs             표시용 버전 문자열
+├── Directory.Build.props     앱·설치기 공통 버전 (1.1.1)
+├── AppVersion.cs             표시용 버전 문자열·비교용 Version
 ├── Amaranth10API.csproj      본 프로그램, 매뉴얼 복사
 ├── app.manifest              DPI / Windows 10 호환
 ├── App.xaml / App.xaml.cs    테마, 단일 인스턴스, 공유 Http 클라이언트
-├── MainWindow.xaml(.cs)      셸: 프레임, 사이드 메뉴, 환경설정, 트레이, 확인 오버레이
+├── MainWindow.xaml(.cs)      셸: 프레임, 사이드 메뉴, 환경설정, 트레이, 업데이트 링크
 ├── Models/
 │   ├── Models.cs             세션·일정·결재·미작성 구간 모델
 │   └── AppSettings.cs        환경설정 (INotifyPropertyChanged)
@@ -69,7 +69,8 @@ Amaranth10API/
 │   ├── ObservableObject.cs   속성 변경 통지 기반
 │   └── ViewModels.cs         Login / Dashboard / MissingPeriod
 ├── Services/
-│   └── AmaranthClient.cs     ERP 로그인·조회·파싱
+│   ├── AmaranthClient.cs     ERP 로그인·조회·파싱
+│   └── UpdateChecker.cs      GitHub 버전 확인·설치기 다운로드
 ├── Views/
 │   ├── LoginPage             로그인
 │   ├── DashboardPage         미작성 목록
@@ -77,9 +78,10 @@ Amaranth10API/
 │   ├── ManualWindow          WebView2 사용자 매뉴얼
 │   ├── TrayMenuWindow        트레이 우클릭 메뉴
 │   └── ConfirmDialog         종료 확인 (UserControl)
-├── Helpers/                  설정·자격 증명·알림·초안 입력 등
+├── Helpers/                  설정·자격 증명·알림·초안 입력·결재 상태
 ├── docs/
 │   └── 사용매뉴얼.html       빌드 시 ReadMe.html 로 복사
+├── dist/                     설치기 빌드 후 복사되는 배포 파일
 ├── Assets/AppIcon.ico
 └── Installer/                아맛다보고서Install (관리자 설치기)
 ```
@@ -113,6 +115,7 @@ SettingsStore        %AppData%\아맛다보고서\settings.json
 - **View**는 입력·클릭만 처리하고, 목록 상태와 미작성 계산은 ViewModel에 둡니다.
 - **AmaranthClient**가 ERP API 호출, HTML/텍스트 파싱, 미작성 기간 그룹화를 담당합니다.
 - **AppRuntime**이 설정 저장, 자동 로그인, 주기적 새로고침, 네트워크 재연결 시 재로그인을 묶습니다.
+- **UpdateChecker**가 GitHub의 `Directory.Build.props`·릴리스와 현재 `AppVersion.Current`를 비교합니다.
 
 시작 순서 (`App.OnStartup`):
 
@@ -121,7 +124,7 @@ SettingsStore        %AppData%\아맛다보고서\settings.json
 3. TLS 1.2를 켭니다.
 4. `WindowsNotification.Initialize()`로 AUMID `Teia.AmattahReport`를 등록하고 시작 메뉴 바로가기를 만듭니다.
 5. `AppRuntime.Current`를 만들어 설정을 읽고, Windows 시작 등록을 설정값에 맞춥니다.
-6. `StartupUri="MainWindow.xaml"`로 메인 창을 엽니다.
+6. `StartupUri="MainWindow.xaml"`로 메인 창을 엽니다. 창이 뜨면 `UpdateChecker.CheckAsync`를 백그라운드로 돌립니다.
 
 ---
 
@@ -159,6 +162,7 @@ SettingsStore        %AppData%\아맛다보고서\settings.json
 - 겹치는 신청서 제목(있으면 Hint)
 - 오늘이 기간 **앞**이면 “출장 전 · 알림을 보내지 않습니다” (휴일근무도 동일 패턴)
 - 오늘이 기간 **안**이면 `IsOngoing` — 초록 톤 카드, “현재 출장 중 · …” / “휴일근무 중 · …”
+- 연결된 신청서가 **진행**(코드 30)이면 “결재가 아직 종결되지 않았습니다”를 덧붙입니다
 - **알림(`ShouldNotify`)은 기간이 지난 뒤에만** 켭니다
 - 클릭 시 `ReportBrowserWindow.OpenDraft`으로 작성 창을 엽니다
 
@@ -166,7 +170,7 @@ SettingsStore        %AppData%\아맛다보고서\settings.json
 
 ### 5.3 메인 셸 (`MainWindow`)
 
-로그인 전에는 왼쪽 패널이 숨겨집니다. 대시보드에 들어가면 햄버거 메뉴가 나타납니다. 창 아래 상태 줄 오른쪽에 `ver 1.0.1`처럼 버전이 나갑니다 (`AppVersion.FooterLabel`).
+로그인 전에는 왼쪽 패널이 숨겨집니다. 대시보드에 들어가면 햄버거 메뉴가 나타납니다. 창 아래 상태 줄 오른쪽은 `ver 1.1.1` (`AppVersion.FooterLabel`), 왼쪽은 새 버전이 있을 때만 “새 버전이 있습니다. (v…)” 링크입니다.
 
 | 메뉴 | 위치 | 동작 |
 | --- | --- | --- |
@@ -208,6 +212,10 @@ ERP가 새 창을 요청하면 자식 `ReportBrowserWindow`를 만들고 `NewWin
 
 `ConfirmDialog`는 별도 Window가 아니라 메인 창 위의 **UserControl 오버레이**입니다. Esc·바깥 클릭은 취소, Enter는 확인입니다. 메인 창이 아니면 작은 모달 창으로 떨어집니다.
 
+### 5.7 업데이트 링크
+
+GitHub에 현재보다 높은 버전이 있으면 상태 줄 왼쪽 링크가 보입니다. 클릭하면 확인 후 설치기를 받아 `runas`로 실행하고 본 프로그램을 종료합니다. 관리자 확인을 취소하거나 다운로드가 실패하면 링크를 되돌립니다. GitHub에 닿지 않아도 앱은 그대로 씁니다.
+
 ---
 
 ## 6. ERP 연동 (`Services/AmaranthClient`)
@@ -243,9 +251,9 @@ Authorization: Bearer {authToken}
 
 결재 목록은 `/eap/eap105A04`를 페이지 크기 100으로 끝까지 돌립니다. 필터는 `eaBoxId=1000900`(완료함 계열), `periodPicker=ACTION_TIME`입니다.
 
-- 보고서: 양식명 또는 제목에 `출장&휴일근무보고서`
-- 출장신청서: `FormId == 40` 또는 양식명에 `출장신청서` (보고서 문서는 제외)
-- 휴일근무신청서: `FormId == 43` 또는 양식명/제목에 `휴일근무신청서`
+- 보고서: 양식명 또는 제목에 `출장&휴일근무보고서`. **반려**(상태명 `반려` 또는 코드 `100`)는 건너뜁니다
+- 출장신청서: `FormId == 40` 또는 양식명에 `출장신청서` (보고서 문서는 제외). 반려는 건너뜁니다
+- 휴일근무신청서: `FormId == 43` 또는 양식명/제목에 `휴일근무신청서`. 반려는 건너뜁니다
 
 상세는 `/eap/eap111A04` (`bindType=V`)입니다. 본문은 `contentsWord`(텍스트)와 `docContents`(HTML)입니다.
 
@@ -277,29 +285,37 @@ ERP 양식이 고정 JSON이 아니라 HTML·워드 텍스트라, 정규식으�
 
 ## 7. 미작성 보고서 판정
 
-근태 캘린더와 신청서를 합쳐 날짜 집합을 만든 뒤, 보고서가 없는 날만 남깁니다. 취소로 상쇄된 날은 뺍니다.
+근태 캘린더와 신청서를 합쳐 날짜 집합을 만든 뒤, 보고서가 없는 날만 남깁니다. 취소로 상쇄된 날과 **반려 문서**는 뺍니다. 결재 상태 판정은 `Helpers/ApprovalStatus.cs`입니다 (`반려`/`100`, `진행`/`30`, `종결`/`90`).
 
 ### 출장
 
 대상 날짜:
 
 - 근태명이 `해외출장` 또는 `국내출장`인 날 (제목/양식에 취소 표시가 없는 것)
-- 취소가 아닌 출장신청서가 덮는 날 (캘린더에 아직 없어도 포함). 제목에 `해외`가 있으면 해외출장으로 표시
+- **종결된** 출장신청서가 덮는 날 (캘린더에 아직 없어도 포함). 제목에 `해외`가 있으면 해외출장으로 표시. 진행 중인 신청서만으로는 날짜를 넣지 않습니다
 
-그 날짜가 어떤 보고서의 `TripStartDate`~`TripEndDate`에도 안 들어가면 미작성입니다. 연속된 같은 이름 날짜를 하나의 `MissingReportPeriod`로 묶고, 겹치는 출장신청서를 `RelatedApplication`에 붙입니다.
+그 날짜가 어떤 **반려가 아닌** 보고서의 `TripStartDate`~`TripEndDate`에도 안 들어가면 미작성입니다. 연속된 같은 이름 날짜를 하나의 `MissingReportPeriod`로 묶고, 겹치는 출장신청서를 `RelatedApplication`에 붙입니다. 종결 문서가 있으면 진행 문서보다 먼저 고릅니다.
 
 ### 휴일근무
 
 대상 날짜:
 
 - 근태명이 `휴일근무`인 날
-- 취소가 아닌 휴일근무신청서의 `WorkDays`(없으면 신청 기간)
+- **종결된** 휴일근무신청서의 `WorkDays`/`CoveredDates`(없으면 신청 기간)
 
 보고서 `HolidayWorks`에 같은 날짜가 없으면 미작성입니다. 겹치는 휴일근무신청서를 카드 Hint·초안 시각에 씁니다.
 
 ### 취소
 
-제목 또는 양식명에 `취소신청` / `상신취소`가 있으면 `IsCancellation`입니다. 같은 날짜를 덮는 신청서 중 **가장 늦은 문서가 취소**이면 그 날은 미작성에서 제외합니다.
+제목 또는 양식명에 `취소신청` / `상신취소`가 있으면 `IsCancellation`입니다. 같은 날짜를 덮는 **종결** 신청서 중 **가장 늦은 문서가 취소**이면 그 날은 미작성에서 제외합니다.
+
+### 결재 상태
+
+| 상태 | 이름 | 코드 | 동작 |
+| --- | --- | --- | --- |
+| 반려 | `반려` | `100` | 신청서·보고서 모두 없는 것으로 취급 |
+| 진행 | `진행` | `30` | 상세는 읽되, 예정 날짜 집합에는 넣지 않음. 카드에 종결 대기 문구 |
+| 종결 | `종결` | `90` | 예정 출장·휴일근무 날짜와 취소 상쇄에 사용 |
 
 ### 알림에서 빼는 경우
 
@@ -334,8 +350,8 @@ ERP 양식이 고정 JSON이 아니라 HTML·워드 텍스트라, 정규식으�
 | --- | --- |
 | `AmaranthSession` | 토큰, 해시 키, 사원/회사/부서 |
 | `WorkSchedule` | 하루 근태 + 출장 부가 정보 |
-| `ApprovalDocumentSummary` / `Page` | 결재 목록 한 페이지 |
-| `BusinessTripDocument` | 출장·휴일근무 신청서 상세 (`WorkDays`, `IsCancellation`) |
+| `ApprovalDocumentSummary` / `Page` | 결재 목록 한 페이지 (`DocumentStatus`, `DocumentStatusCode`) |
+| `BusinessTripDocument` | 출장·휴일근무 신청서 상세 (`WorkDays`, `CoveredDates`, `IsCancellation`) |
 | `HolidayWorkDay` | 휴일근무신청서의 하루 시각 |
 | `BusinessTripReport` | 보고서 상세 + `HolidayWorks` |
 | `HolidayWorkEntry` | 보고서 안 휴일근무 한 행 |
@@ -380,16 +396,39 @@ MINOR(두 번째): 기능 추가
 MAJOR(첫 번째): 대규모 변경
 ```
 
-`AppVersion`은 `AssemblyInformationalVersion`을 읽고(`+` git 해시는 자름), 없으면 `Major.Minor.Build`를 씁니다.
+`AppVersion`은 `AssemblyInformationalVersion`을 읽고(`+` git 해시는 자름), 없으면 `Major.Minor.Build`를 씁니다. `Current`는 비교용 `System.Version`입니다.
 
-- 본 프로그램 하단: `ver 1.0.1`
-- 설치기 첫 버튼: `아맛다보고서 1.0.1 설치`
+- 본 프로그램 하단: `ver 1.1.1`
+- 설치기 첫 버튼: `아맛다보고서 1.1.1 설치`
 
-버전을 올릴 때는 `Directory.Build.props`만 고치면 됩니다.
+버전을 올릴 때는 `Directory.Build.props`만 고치면 됩니다. GitHub `main`의 같은 파일과 최신 릴리스 태그가 업데이트 확인의 기준입니다.
 
 ---
 
-## 12. 설치기 (`Installer`)
+## 12. 자동 업데이트 (`Services/UpdateChecker`)
+
+저장소는 GitHub `ermuks/Amatha`, 브랜치 `main`입니다. 확인 제한 시간은 12초입니다.
+
+최신 버전은 둘 중 큰 쪽입니다.
+
+1. `GET https://api.github.com/repos/ermuks/Amatha/releases/latest`의 `tag_name` (앞의 `v`는 무시)
+2. `raw.githubusercontent.com/.../Directory.Build.props`의 `<Version>` 값
+
+현재 `AppVersion.Current`보다 크지 않으면 링크를 숨깁니다.
+
+설치기 주소 우선순위:
+
+1. 최신 릴리스가 이긴 경우 그 릴리스의 `*Install.exe` / `아맛다보고서Install.exe` 에셋
+2. `https://github.com/ermuks/Amatha/raw/main/dist/아맛다보고서Install.exe`
+3. Git LFS용 `media.githubusercontent.com/.../dist/아맛다보고서Install.exe`
+
+받은 파일이 64KB 미만이거나 Git LFS 포인터(`version https://git-lfs.github.com/spec/v1`)이면 다음 URL을 시도합니다. 성공하면 `%TEMP%\아맛다보고서Install.exe`에 두고 `Verb=runas`로 실행합니다.
+
+User-Agent는 `AmathaBogoso/{버전}`입니다.
+
+---
+
+## 13. 설치기 (`Installer`)
 
 프로젝트 `Installer/Amaranth10Installer.csproj`, 출력 이름은 `아맛다보고서Install.exe`입니다. `app.manifest`에서 **관리자 권한**을 요청합니다. 기본 설치 경로가 `C:\Program Files (x64)\AmathaBogoso\`이기 때문입니다.
 
@@ -404,9 +443,11 @@ MAJOR(첫 번째): 대규모 변경
 
 화면 톤은 본 프로그램과 달리 큰 하늘색 버튼·맑은 고딕입니다.
 
+빌드가 끝나면 `CopyInstallerToDist`가 `dist/아맛다보고서Install.exe`로 복사합니다. 인앱 업데이트가 GitHub `dist/`에서 이 파일을 받습니다.
+
 ---
 
-## 13. 로컬 저장 위치
+## 14. 로컬 저장 위치
 
 | 경로 | 내용 |
 | --- | --- |
@@ -417,12 +458,13 @@ MAJOR(첫 번째): 대규모 변경
 | `%AppData%\Microsoft\Windows\Start Menu\Programs\아맛다보고서.lnk` | 토스트 AUMID용 바로가기 |
 | `%AppData%\Microsoft\Windows\Start Menu\Programs\Startup\아맛다보고서.lnk` | Windows 시작 시 실행 (`--autostart`) |
 | `C:\Program Files (x64)\AmathaBogoso\` | 설치기 기본 설치 폴더 |
+| `%TEMP%\아맛다보고서Install.exe` | 인앱 업데이트가 받은 설치기 |
 
 비밀번호는 현재 Windows 사용자만 풀 수 있습니다. 다른 계정·다른 PC로는 복호화되지 않습니다. 예전 Run 레지스트리 값은 시작 등록 시 지웁니다.
 
 ---
 
-## 14. 알림·백그라운드 새로고침
+## 15. 알림·백그라운드 새로고침
 
 `NotificationsEnabled`이고 로그인한 동안 `DispatcherTimer`가 `Dashboard.ReloadAsync(silent: true)`를 돌립니다. 이미 로딩 중이면 건너뜁니다.
 
@@ -432,7 +474,7 @@ MAJOR(첫 번째): 대규모 변경
 
 ---
 
-## 15. UI 톤
+## 16. UI 톤
 
 `App.xaml`에 남색(`#3E5270`)·종이색·안개색 브러시와 버튼·입력란 스타일이 있습니다. 근태 종류별 강조색은 `SchedulePalette`입니다 (출장 남색, 휴일근무 로즈, 연차 세이지 등). 변환기는 `BoolToVisibilityConverter`입니다.
 
@@ -440,15 +482,17 @@ MAJOR(첫 번째): 대규모 변경
 
 ---
 
-## 16. 파일별 역할
+## 17. 파일별 역할
 
 | 파일 | 역할 |
 | --- | --- |
-| `Directory.Build.props` | 공통 버전 1.0.1 |
-| `AppVersion.cs` | 하단·설치 버튼 문자열 |
+| `Directory.Build.props` | 공통 버전 1.1.1 |
+| `AppVersion.cs` | 하단·설치 버튼 문자열, `Current` |
 | `App.xaml.cs` | 단일 인스턴스, TLS, 알림 초기화, 공유 Client, `--autostart` |
-| `MainWindow.xaml.cs` | 탐색, 트레이, 자동 로그인, 사이드 메뉴, 설정, 확인 오버레이 |
+| `MainWindow.xaml.cs` | 탐색, 트레이, 자동 로그인, 사이드 메뉴, 설정, 업데이트 링크 |
 | `Services/AmaranthClient.cs` | ERP HTTP, 서명, 파싱, 미작성 계산 |
+| `Services/UpdateChecker.cs` | GitHub 버전 확인, 설치기 다운로드 |
+| `Helpers/ApprovalStatus.cs` | 반려·진행·종결 판정 |
 | `ViewModels/ViewModels.cs` | 로그인·대시보드 상태, 알림 트리거, 초안 Fill 구성 |
 | `Helpers/AppRuntime.cs` | 설정 연동, 세션, 타이머, 재연결 로그인 |
 | `Helpers/CredentialStore.cs` | DPAPI 로그인 파일 |
@@ -460,14 +504,15 @@ MAJOR(첫 번째): 대규모 변경
 | `Views/ReportBrowserWindow.xaml.cs` | 쿠키 주입, 팝업, 초안 입력, 닫힌 뒤 새로고침 |
 | `Views/ManualWindow.xaml.cs` | 로컬 HTML 매뉴얼 |
 | `docs/사용매뉴얼.html` | 빌드 시 `ReadMe.html`로 복사 |
+| `dist/아맛다보고서Install.exe` | GitHub에서 받는 설치기 사본 |
 | `Installer/*` | 관리자 설치기, payload.zip 임베드 |
 
 ---
 
-## 17. 실행·배포 시 알아 둘 점
+## 18. 실행·배포 시 알아 둘 점
 
 - Windows 10 이상, x64, .NET Framework 4.8, **WebView2 Runtime**이 필요합니다.
-- 배포: 본 프로그램을 Release 빌드한 뒤 `Installer`를 Release 빌드하면 `아맛다보고서Install.exe` 하나가 나갑니다. 설치 시 관리자 권한이 필요합니다.
+- 배포: 본 프로그램을 Release 빌드한 뒤 `Installer`를 Release 빌드하면 `아맛다보고서Install.exe`와 `dist/` 사본이 나갑니다. 설치 시 관리자 권한이 필요합니다. 인앱 업데이트를 쓰려면 GitHub `main`에 `Directory.Build.props`와 `dist/아맛다보고서Install.exe`를 올려 두어야 합니다.
 - 이미 실행 중이면 설치기가 프로세스를 닫은 다음 파일을 덮어씁니다.
 - ERP 주소·그룹 시퀀스·양식 ID는 코드 상수입니다. 서버가 바뀌면 `AmaranthClient`를 고쳐야 합니다.
 - ERP HTML 양식이 바뀌면 기간·휴일근무 파싱과 자동 입력이 깨질 수 있습니다.
