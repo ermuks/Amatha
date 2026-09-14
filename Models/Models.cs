@@ -67,6 +67,7 @@ public sealed class BusinessTripDocument
     public string EndTime { get; set; } = string.Empty;
     public string ContentsWord { get; set; } = string.Empty;
     public string DocContents { get; set; } = string.Empty;
+    public string ProjectCode { get; set; } = string.Empty;
     public List<HolidayWorkDay> WorkDays { get; set; } = new();
     public List<DateTime> CoveredDates { get; set; } = new();
     public bool IsCancellation { get; set; }

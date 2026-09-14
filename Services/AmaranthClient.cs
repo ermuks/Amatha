@@ -1461,9 +1461,86 @@ public sealed class AmaranthClient
             EndTime = endTime,
             ContentsWord = contentsWord,
             DocContents = docContents,
+            ProjectCode = ExtractProjectCode(contentsWord, docContents),
             CoveredDates = coveredDates,
             IsCancellation = IsCancelledApplication(summary)
         };
+    }
+
+    private static string ExtractProjectCode(string contentsWord, string docContents)
+    {
+        string fromHtml = ExtractProjectCodeFromHtml(docContents);
+        if (!string.IsNullOrWhiteSpace(fromHtml))
+        {
+            return fromHtml;
+        }
+
+        string fromWord = ExtractProjectCodeFromText(contentsWord);
+        if (!string.IsNullOrWhiteSpace(fromWord))
+        {
+            return fromWord;
+        }
+
+        return ExtractProjectCodeFromText(ConvertHtmlToText(docContents));
+    }
+
+    private static string ExtractProjectCodeFromHtml(string html)
+    {
+        if (string.IsNullOrWhiteSpace(html))
+        {
+            return string.Empty;
+        }
+
+        Match rowMatch = Regex.Match(
+            html,
+            @"<tr\b[^>]*>(?:(?!</tr>).)*프로젝트\s*코드(?:(?!</tr>).)*</tr>",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        if (!rowMatch.Success)
+        {
+            return string.Empty;
+        }
+
+        List<string> cells = ExtractTableCellValues(rowMatch.Value);
+        for (int index = 1; index < cells.Count; index++)
+        {
+            string cleaned = CleanProjectCode(cells[index]);
+            if (!string.IsNullOrWhiteSpace(cleaned))
+            {
+                return cleaned;
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static string ExtractProjectCodeFromText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        Match match = Regex.Match(
+            NormalizeVisibleText(text),
+            @"프로젝트\s*코드\s*[:：]?\s*(?<value>.+?)(?=\s+(?:출장기간|출장일수|목적지|출장목적|출장구분|휴일근무|업무내용|구분)\b|$)",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        return match.Success ? CleanProjectCode(match.Groups["value"].Value) : string.Empty;
+    }
+
+    private static string CleanProjectCode(string value)
+    {
+        string cleaned = NormalizeVisibleText(value);
+        if (string.IsNullOrWhiteSpace(cleaned))
+        {
+            return string.Empty;
+        }
+
+        if (cleaned.Contains("프로젝트") && cleaned.Length < 12)
+        {
+            return string.Empty;
+        }
+
+        return cleaned;
     }
 
     private static List<DateTime> ResolveCoveredDates(

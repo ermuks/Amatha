@@ -299,6 +299,7 @@ public sealed class DashboardViewModel : ObservableObject
             PeriodText = FormatPeriod(period.StartDate, period.EndDate),
             DayCountText = period.DayCount == 1 ? "1일" : $"{period.DayCount}일",
             Hint = hasApplication ? application!.Title : string.Empty,
+            ProjectCode = application?.ProjectCode ?? string.Empty,
             StatusText = BuildStatusText(application, isTrip, isUpcoming, isOngoing),
             StartDate = period.StartDate,
             EndDate = period.EndDate,
@@ -439,6 +440,7 @@ public sealed class MissingPeriodViewModel
     public string PeriodText { get; init; } = string.Empty;
     public string DayCountText { get; init; } = string.Empty;
     public string Hint { get; init; } = string.Empty;
+    public string ProjectCode { get; init; } = string.Empty;
     public string StatusText { get; init; } = string.Empty;
     public DateTime StartDate { get; init; }
     public DateTime EndDate { get; init; }
@@ -447,5 +449,6 @@ public sealed class MissingPeriodViewModel
     public ReportDraftFill Fill { get; init; } = new();
     public SolidColorBrush AccentBrush { get; init; } = SchedulePalette.GetBrush("출장");
     public Visibility HintVisibility => string.IsNullOrWhiteSpace(Hint) ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility ProjectCodeVisibility => string.IsNullOrWhiteSpace(ProjectCode) ? Visibility.Collapsed : Visibility.Visible;
     public Visibility StatusVisibility => string.IsNullOrWhiteSpace(StatusText) ? Visibility.Collapsed : Visibility.Visible;
 }
