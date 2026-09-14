@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <!-- MAJOR.MINOR.PATCH
+         PATCH(세 번째): 수정/버그 수정
+         MINOR(두 번째): 기능 추가
+         MAJOR(첫 번째): 대규모 변경 -->
+    <Version>1.1.0</Version>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
+    <InformationalVersion>1.1.0</InformationalVersion>
+  </PropertyGroup>
+</Project>

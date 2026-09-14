@@ -1,0 +1,73 @@
+<Window x:Class="Amaranth10API.Views.ReportBrowserWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="출장&amp;휴일근무보고서"
+        Width="1020"
+        Height="820"
+        MinWidth="720"
+        MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI"
+        Background="#F3F5F8">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Padding="12,10"
+                Background="#EEF1F5"
+                BorderBrush="#D5DDE6"
+                BorderThickness="0,0,0,1">
+            <TextBox x:Name="AddressBox"
+                     Height="36"
+                     MinHeight="36"
+                     Padding="12,0"
+                     FontSize="12"
+                     FontFamily="Consolas, Segoe UI"
+                     Foreground="#2A3548"
+                     Background="#FBFCFD"
+                     BorderBrush="#D5DDE6"
+                     BorderThickness="1"
+                     VerticalContentAlignment="Center"
+                     IsReadOnly="True"
+                     IsReadOnlyCaretVisible="True"
+                     TextWrapping="NoWrap"
+                     HorizontalScrollBarVisibility="Hidden"
+                     ToolTip="주소를 드래그해서 복사할 수 있습니다">
+                <TextBox.Template>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          VerticalAlignment="Center"
+                                          HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Disabled" />
+                        </Border>
+                    </ControlTemplate>
+                </TextBox.Template>
+            </TextBox>
+        </Border>
+
+        <Grid x:Name="BrowserHost" Grid.Row="1">
+            <Border x:Name="LoadingOverlay"
+                    Background="#F3F5F8"
+                    Panel.ZIndex="1">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ProgressBar Width="160" Height="4" IsIndeterminate="True"
+                                 Foreground="#3E5270" BorderThickness="0" />
+                    <TextBlock x:Name="LoadingText"
+                               Margin="0,12,0,0"
+                               HorizontalAlignment="Center"
+                               FontSize="13"
+                               Foreground="#5A6F8A"
+                               Text="보고서 작성 화면을 여는 중..." />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

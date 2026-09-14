@@ -1,0 +1,84 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>아맛다보고서Install</AssemblyName>
+    <RootNamespace>Amaranth10Installer</RootNamespace>
+    <ApplicationIcon>..\Assets\AppIcon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <Product>아맛다보고서 설치</Product>
+    <Title>아맛다보고서 설치</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\AppVersion.cs" Link="AppVersion.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="..\Assets\AppIcon.ico" Link="Assets\AppIcon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Amaranth10API.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <Target Name="PreparePayload" AfterTargets="ResolveProjectReferences" BeforeTargets="BeforeBuild;CoreCompile">
+    <PropertyGroup>
+      <_AppOut>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\bin\$(Configuration)\net48\'))</_AppOut>
+      <_Stage>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)payload\'))</_Stage>
+      <_Zip>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)payload.zip'))</_Zip>
+    </PropertyGroup>
+
+    <Error Condition="!Exists('$(_AppOut)아맛다보고서.exe')"
+           Text="아맛다보고서.exe를 찾지 못했습니다. 본 프로그램을 먼저 Release로 빌드해 주세요." />
+
+    <RemoveDir Directories="$(_Stage)" Condition="Exists('$(_Stage)')" />
+    <MakeDir Directories="$(_Stage)" />
+
+    <ItemGroup>
+      <_Payload Include="$(_AppOut)**\*"
+                Exclude="$(_AppOut)**\*.pdb;$(_AppOut)**\*.zip;$(_AppOut)**\*.xml" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(_Payload)"
+          DestinationFiles="@(_Payload->'$(_Stage)%(RecursiveDir)%(Filename)%(Extension)')" />
+
+    <Delete Files="$(_Zip)" Condition="Exists('$(_Zip)')" />
+    <ZipDirectory SourceDirectory="$(_Stage)" DestinationFile="$(_Zip)" Overwrite="true" />
+
+    <ItemGroup>
+      <EmbeddedResource Include="$(_Zip)">
+        <LogicalName>payload.zip</LogicalName>
+        <Type>Non-Resx</Type>
+      </EmbeddedResource>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CopyInstallerToDist" AfterTargets="Build">
+    <MakeDir Directories="$(MSBuildThisFileDirectory)..\dist" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFiles="$(MSBuildThisFileDirectory)..\dist\아맛다보고서Install.exe"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>

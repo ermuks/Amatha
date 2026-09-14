@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>아맛다보고서 사용 매뉴얼</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #3e5270;
+      --ink: #2a3548;
+      --muted: #5a6f8a;
+      --line: #d5dde6;
+      --paper: #fbfcfd;
+      --canvas: #f3f5f8;
+      --red: #e03131;
+      --red-soft: #fff1f1;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      font-family: "Noto Sans KR", sans-serif;
+      color: var(--ink);
+      background: var(--canvas);
+      line-height: 1.45;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 20px;
+      background: rgba(243, 245, 248, 0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 16px;
+      cursor: pointer;
+    }
+
+    .btn-pdf { background: var(--navy); color: #fff; }
+    .btn-pdf:hover { background: #33455e; }
+    .hint { font-size: 12px; color: var(--muted); align-self: center; }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 28px 20px 64px;
+    }
+
+    header.hero {
+      margin-bottom: 36px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--navy);
+      background: #e8edf3;
+      border-radius: 999px;
+      padding: 4px 10px;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      margin-bottom: 8px;
+    }
+
+    .lead {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .step {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 22px 22px 18px;
+      margin-bottom: 22px;
+      break-inside: avoid;
+    }
+
+    .step h2 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--navy);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .one {
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .shot {
+      position: relative;
+      display: block;
+      line-height: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #eef2f6;
+    }
+
+    .shot img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .shot svg {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .shot-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #f3f5f8;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .rules {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .rule {
+      border-radius: 14px;
+      padding: 14px 12px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .rule b { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+    .off { background: #eef4f1; color: #3d6b5c; }
+    .on { background: var(--red-soft); color: var(--red); }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 720px) {
+      .grid-2, .rules { grid-template-columns: 1fr; }
+      h1 { font-size: 26px; }
+      .hint { display: none; }
+    }
+
+    @page { size: A4; margin: 12mm; }
+
+    @media print {
+      html, body { background: #fff; }
+      .toolbar { display: none !important; }
+      .wrap { max-width: none; padding: 0; }
+      .step { box-shadow: none; margin-bottom: 16px; }
+      .shot { break-inside: avoid; }
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto">
+        <path d="M0,1.5 L11,6 L0,10.5 Z" fill="#e03131" />
+      </marker>
+    </defs>
+  </svg>
+
+  <div class="toolbar">
+    <span class="hint">인쇄 창에서 대상을 「PDF로 저장」으로 고르세요</span>
+    <button class="btn-pdf" type="button" onclick="window.print()">PDF로 저장</button>
+  </div>
+
+  <main class="wrap">
+    <header class="hero">
+      <span class="badge">TEIA</span>
+      <h1>아맛다보고서</h1>
+      <p class="lead">신청은 했는데 보고서를 안 쓴 건을 찾아 알려 줍니다.</p>
+    </header>
+
+    <section class="step">
+      <h2><span class="num">1</span> 로그인</h2>
+      <p class="one">회사 ERP 아이디와 비밀번호를 입력하고 로그인합니다.</p>
+      <figure class="shot">
+        <img src="images/01-login.png" alt="로그인 화면" width="886" height="753" />
+        <svg viewBox="0 0 886 753" preserveAspectRatio="none">
+          <rect x="252" y="328" width="380" height="44" rx="12" fill="none" stroke="#e03131" stroke-width="4" />
+          <rect x="252" y="412" width="380" height="44" rx="12" fill="none" stroke="#e03131" stroke-width="4" />
+          <rect x="252" y="478" width="380" height="46" rx="12" fill="none" stroke="#e03131" stroke-width="5" />
+          <line x1="720" y1="350" x2="642" y2="350" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+          <line x1="720" y1="434" x2="642" y2="434" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+          <line x1="720" y1="501" x2="642" y2="501" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+          <g transform="translate(728,332)">
+            <rect width="132" height="36" rx="8" fill="#e03131" />
+            <text x="66" y="24" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">아이디</text>
+          </g>
+          <g transform="translate(728,416)">
+            <rect width="132" height="36" rx="8" fill="#e03131" />
+            <text x="66" y="24" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">비밀번호</text>
+          </g>
+          <g transform="translate(728,483)">
+            <rect width="132" height="36" rx="8" fill="#e03131" />
+            <text x="66" y="24" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">여기 클릭</text>
+          </g>
+        </svg>
+      </figure>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">2</span> 미작성 목록</h2>
+      <p class="one">카드를 누르면 보고서 작성 화면이 열립니다.</p>
+      <figure class="shot">
+        <img src="images/02-dashboard.png" alt="미작성 목록" width="886" height="753" />
+        <svg viewBox="0 0 886 753" preserveAspectRatio="none">
+          <rect x="56" y="74" width="804" height="116" rx="18" fill="none" stroke="#e03131" stroke-width="5" />
+          <line x1="458" y1="36" x2="458" y2="68" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+          <g transform="translate(358,4)">
+            <rect width="200" height="34" rx="8" fill="#e03131" />
+            <text x="100" y="23" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">이 카드를 누르세요</text>
+          </g>
+          <line x1="430" y1="218" x2="250" y2="172" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+          <g transform="translate(360,218)">
+            <rect width="150" height="34" rx="8" fill="#e03131" />
+            <text x="75" y="23" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Noto Sans KR, sans-serif">알림 없음</text>
+          </g>
+          <rect x="56" y="248" width="804" height="118" rx="18" fill="none" stroke="#e03131" stroke-width="3" stroke-dasharray="8 6" />
+          <line x1="720" y1="400" x2="720" y2="372" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+          <g transform="translate(646,404)">
+            <rect width="148" height="34" rx="8" fill="#e03131" />
+            <text x="74" y="23" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Noto Sans KR, sans-serif">시작 전도 동일</text>
+          </g>
+        </svg>
+      </figure>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">3</span> 보고서 작성</h2>
+      <p class="one">기간·일수는 자동입니다. 프로젝트 코드와 본문만 채운 뒤 상신하세요.</p>
+      <figure class="shot">
+        <img src="images/03-report.png" alt="보고서 작성 화면" width="1006" height="839" />
+        <svg viewBox="0 0 1006 839" preserveAspectRatio="none">
+          <rect x="96" y="164" width="790" height="44" rx="8" fill="none" stroke="#e03131" stroke-width="4" />
+          <line x1="500" y1="120" x2="500" y2="158" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+          <g transform="translate(410,80)">
+            <rect width="180" height="34" rx="8" fill="#e03131" />
+            <text x="90" y="23" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">직접 입력</text>
+          </g>
+          <rect x="96" y="636" width="820" height="38" rx="8" fill="none" stroke="#e03131" stroke-width="4" />
+          <line x1="250" y1="720" x2="300" y2="680" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+          <g transform="translate(78,724)">
+            <rect width="220" height="34" rx="8" fill="#e03131" />
+            <text x="110" y="23" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">출장기간 · 일수 자동</text>
+          </g>
+          <circle cx="946" cy="118" r="26" fill="none" stroke="#e03131" stroke-width="5" />
+          <line x1="946" y1="66" x2="946" y2="90" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+          <g transform="translate(876,26)">
+            <rect width="140" height="34" rx="8" fill="#e03131" />
+            <text x="70" y="23" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">다 되면 상신</text>
+          </g>
+        </svg>
+      </figure>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">4</span> 메뉴 · 환경설정</h2>
+      <p class="one">왼쪽 ☰ 을 누르면 설정, 로그아웃, 종료가 나옵니다.</p>
+      <div class="grid-2">
+        <figure class="shot">
+          <img src="images/04-menu.png" alt="사이드 메뉴" width="886" height="753" />
+          <svg viewBox="0 0 886 753" preserveAspectRatio="none">
+            <circle cx="28" cy="56" r="20" fill="none" stroke="#e03131" stroke-width="4" />
+            <rect x="4" y="36" width="228" height="713" rx="8" fill="none" stroke="#e03131" stroke-width="4" />
+            <line x1="360" y1="680" x2="236" y2="680" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+            <g transform="translate(368,662)">
+              <rect width="200" height="36" rx="8" fill="#e03131" />
+              <text x="100" y="24" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Noto Sans KR, sans-serif">설정 / 로그아웃 / 종료</text>
+            </g>
+          </svg>
+        </figure>
+        <figure class="shot">
+          <img src="images/05-settings.png" alt="환경설정" width="886" height="753" />
+          <svg viewBox="0 0 886 753" preserveAspectRatio="none">
+            <rect x="64" y="86" width="790" height="180" rx="12" fill="none" stroke="#e03131" stroke-width="4" />
+            <g transform="translate(720,52)">
+              <rect width="88" height="30" rx="8" fill="#e03131" />
+              <text x="44" y="21" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Noto Sans KR, sans-serif">알림</text>
+            </g>
+            <rect x="64" y="308" width="520" height="128" rx="10" fill="none" stroke="#e03131" stroke-width="3" />
+            <line x1="700" y1="372" x2="594" y2="372" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+            <g transform="translate(708,354)">
+              <rect width="150" height="36" rx="8" fill="#e03131" />
+              <text x="75" y="24" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Noto Sans KR, sans-serif">자동 로그인</text>
+            </g>
+          </svg>
+        </figure>
+      </div>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">5</span> 트레이 · 종료</h2>
+      <p class="one">창을 닫으면 오른쪽 아래 트레이로 갑니다. 아이콘을 누르면 메뉴가 열립니다.</p>
+      <figure class="shot">
+        <svg class="shot-svg" viewBox="0 0 620 170" role="img" aria-label="트레이 메뉴 설명">
+          <image href="images/06-tray.png" x="16" y="14" width="239" height="142" />
+          <rect x="32" y="26" width="168" height="42" rx="10" fill="none" stroke="#e03131" stroke-width="3" />
+          <line x1="204" y1="47" x2="278" y2="47" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+          <g transform="translate(286,29)">
+            <rect width="310" height="36" rx="8" fill="#e03131" />
+            <text x="155" y="24" text-anchor="middle" fill="#fff" font-size="15" font-weight="700" font-family="Noto Sans KR, sans-serif">GUI 보이기 = 창 다시 열기</text>
+          </g>
+          <rect x="32" y="86" width="168" height="42" rx="10" fill="none" stroke="#e03131" stroke-width="3" />
+          <line x1="204" y1="107" x2="278" y2="107" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+          <g transform="translate(286,89)">
+            <rect width="310" height="36" rx="8" fill="#e03131" />
+            <text x="155" y="24" text-anchor="middle" fill="#fff" font-size="15" font-weight="700" font-family="Noto Sans KR, sans-serif">종료하기 = 프로그램 끄기</text>
+          </g>
+        </svg>
+      </figure>
+      <p class="one" style="margin-top:16px">종료하기를 누르면 확인 창이 뜹니다. 예를 고르면 완전히 꺼집니다.</p>
+      <figure class="shot">
+        <img src="images/07-exit.png" alt="종료 확인" width="886" height="753" />
+        <svg viewBox="0 0 886 753" preserveAspectRatio="none">
+          <rect x="250" y="308" width="384" height="168" rx="22" fill="none" stroke="#e03131" stroke-width="5" />
+          <line x1="740" y1="430" x2="640" y2="430" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
+          <g transform="translate(748,412)">
+            <rect width="120" height="36" rx="8" fill="#e03131" />
+            <text x="60" y="24" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Noto Sans KR, sans-serif">예 = 종료</text>
+          </g>
+        </svg>
+      </figure>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">6</span> 알림이 가는 때</h2>
+      <p class="one">목록에는 보여도, 알림은 기간이 끝난 뒤에만 갑니다.</p>
+      <div class="rules">
+        <div class="rule off"><b>출장·휴일근무 전</b>알림 없음</div>
+        <div class="rule off"><b>진행 중</b>알림 없음</div>
+        <div class="rule on"><b>끝난 뒤 미작성</b>알림</div>
+      </div>
+    </section>
+
+    <footer>아맛다보고서 · 사용 매뉴얼</footer>
+  </main>
+</body>
+</html>

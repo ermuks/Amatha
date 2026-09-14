@@ -1,0 +1,97 @@
+<UserControl x:Class="Amaranth10API.Views.ConfirmDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="Segoe UI"
+             Focusable="True"
+             PreviewKeyDown="UserControl_PreviewKeyDown">
+    <UserControl.Resources>
+        <Style x:Key="DialogQuietStyle" TargetType="Button" BasedOn="{StaticResource QuietButtonStyle}">
+            <Setter Property="MinWidth" Value="104" />
+            <Setter Property="Height" Value="42" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="12"
+                                Padding="18,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#D9E2EC" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="DialogPrimaryStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="MinWidth" Value="104" />
+            <Setter Property="Height" Value="42" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="12"
+                                Padding="18,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#4A6285" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Border Width="380"
+            Padding="28,26,28,22"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Background="#FBFCFD"
+            BorderBrush="#D5DDE6"
+            BorderThickness="1"
+            CornerRadius="20"
+            MouseLeftButtonDown="Card_MouseLeftButtonDown">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="28"
+                              ShadowDepth="4"
+                              Opacity="0.22"
+                              Color="#2A3548" />
+        </Border.Effect>
+        <StackPanel>
+            <TextBlock x:Name="TitleText"
+                       FontSize="13"
+                       FontWeight="SemiBold"
+                       Foreground="#5A6F8A"
+                       Text="종료하기" />
+            <TextBlock x:Name="MessageText"
+                       Margin="0,10,0,0"
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       Foreground="#2A3548"
+                       TextWrapping="Wrap"
+                       Text="정말로 종료하시겠습니까?" />
+            <StackPanel Margin="0,28,0,0"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <Button Style="{StaticResource DialogQuietStyle}"
+                        Content="아니오"
+                        IsCancel="True"
+                        Click="No_Click" />
+                <Button Margin="10,0,0,0"
+                        Style="{StaticResource DialogPrimaryStyle}"
+                        Content="예"
+                        IsDefault="True"
+                        Click="Yes_Click" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

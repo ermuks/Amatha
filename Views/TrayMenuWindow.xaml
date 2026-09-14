@@ -1,0 +1,67 @@
+<Window x:Class="Amaranth10API.Views.TrayMenuWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="아맛다보고서"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        Topmost="True"
+        FontFamily="Segoe UI"
+        Deactivated="Window_Deactivated">
+    <Window.Resources>
+        <Style x:Key="TrayMenuItemStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#2A3548" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#E8EDF3" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border Margin="12"
+            Background="#FBFCFD"
+            BorderBrush="#D5DDE6"
+            BorderThickness="1"
+            CornerRadius="16"
+            Width="196">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="22"
+                              ShadowDepth="2"
+                              Opacity="0.18"
+                              Color="#2A3548" />
+        </Border.Effect>
+        <StackPanel Margin="8">
+            <Button Style="{StaticResource TrayMenuItemStyle}"
+                    Content="GUI 보이기"
+                    Click="ShowGui_Click" />
+            <Button Style="{StaticResource TrayMenuItemStyle}"
+                    Foreground="#B07A7A"
+                    Content="종료하기"
+                    Click="Exit_Click" />
+        </StackPanel>
+    </Border>
+</Window>

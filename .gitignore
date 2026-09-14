@@ -1,0 +1,43 @@
+# Build
+bin/
+obj/
+publish/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.DotSettings.user
+
+# NuGet / restore
+*.nupkg
+**/packages/*
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Build leftovers
+*.pdb
+*.log
+*.cache
+Installer.zip
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Secrets / local
+.env
+.env.*
+*.pfx
+*.snk
+credentials.json
+appsettings.*.local.json
