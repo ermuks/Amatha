@@ -64,6 +64,9 @@
                         <Button Style="{StaticResource SideMenuButtonStyle}"
                                 Content="사용자 매뉴얼"
                                 Click="Manual_Click" />
+                        <Button Style="{StaticResource SideMenuButtonStyle}"
+                                Content="업데이트 확인"
+                                Click="CheckUpdate_Click" />
                     </StackPanel>
                     <StackPanel Margin="10,56,10,12" VerticalAlignment="Bottom">
                         <Button Style="{StaticResource SideMenuButtonStyle}"

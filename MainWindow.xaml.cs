@@ -25,7 +25,12 @@ public partial class MainWindow : Window
     private bool _hideToTrayAfterRender;
     private AppUpdateInfo? _availableUpdate;
     private bool _updateBusy;
+    private bool _updateCheckRunning;
     private string _updateLinkText = string.Empty;
+    private readonly DispatcherTimer _updateTimer = new()
+    {
+        Interval = TimeSpan.FromHours(1)
+    };
 
     public MainWindow()
     {
@@ -35,6 +40,8 @@ public partial class MainWindow : Window
         InitializeTray();
         NavigateToLogin();
         Loaded += MainWindow_Loaded;
+        _updateTimer.Tick += async (_, _) => await CheckForUpdateAsync();
+        _updateTimer.Start();
         _ = CheckForUpdateAsync();
         if (AppRuntime.Current.Settings.StartInTray && App.StartedFromWindowsStartup)
         {
@@ -66,21 +73,54 @@ public partial class MainWindow : Window
         await TryAutoLoginAsync();
     }
 
-    private async Task CheckForUpdateAsync()
+    private async Task CheckForUpdateAsync(bool notifyResult = false)
     {
+        if (_updateCheckRunning || _updateBusy)
+        {
+            return;
+        }
+
+        _updateCheckRunning = true;
         try
         {
             AppUpdateInfo? update = await UpdateChecker.CheckAsync();
-            if (update == null)
-            {
-                return;
-            }
-
-            await Dispatcher.InvokeAsync(() => ShowUpdateLink(update));
+            await Dispatcher.InvokeAsync(() => ApplyUpdateCheckResult(update, notifyResult));
         }
         catch
         {
-            // GitHub에 닿지 않아도 프로그램은 그대로 씁니다.
+            if (notifyResult)
+            {
+                await Dispatcher.InvokeAsync(() => MessageBox.Show(
+                    this,
+                    "업데이트를 확인하지 못했습니다.",
+                    "아맛다보고서",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning));
+            }
+        }
+        finally
+        {
+            _updateCheckRunning = false;
+        }
+    }
+
+    private void ApplyUpdateCheckResult(AppUpdateInfo? update, bool notifyResult)
+    {
+        if (update != null)
+        {
+            ShowUpdateLink(update);
+            return;
+        }
+
+        HideUpdateLink();
+        if (notifyResult)
+        {
+            MessageBox.Show(
+                this,
+                "지금 쓰는 버전이 최신입니다.",
+                "아맛다보고서",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
     }
 
@@ -88,8 +128,22 @@ public partial class MainWindow : Window
     {
         _availableUpdate = update;
         _updateLinkText = "새 버전이 있습니다. (v" + update.LatestLabel + ")";
-        UpdateLink.Text = _updateLinkText;
+        RestoreUpdateLink();
         UpdateLink.Visibility = Visibility.Visible;
+    }
+
+    private void HideUpdateLink()
+    {
+        _availableUpdate = null;
+        _updateLinkText = string.Empty;
+        UpdateLink.Text = string.Empty;
+        UpdateLink.Visibility = Visibility.Collapsed;
+    }
+
+    private async void CheckUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        CollapseMenu(animate: true);
+        await CheckForUpdateAsync(notifyResult: true);
     }
 
     private async void UpdateLink_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -212,7 +266,6 @@ public partial class MainWindow : Window
         }
 
         Activate();
-        _ = CheckForUpdateAsync();
     }
 
     private void InitializeTray()
