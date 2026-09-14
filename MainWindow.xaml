@@ -11,6 +11,9 @@
         FontFamily="Segoe UI"
         Background="#F3F5F8"
         Icon="Assets/AppIcon.ico"
+        PreviewMouseDown="Window_PreviewMouseDown"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        Deactivated="Window_Deactivated"
         Closing="Window_Closing">
     <Grid>
         <Grid.RowDefinitions>

@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Amaranth10API.Helpers;
@@ -275,6 +276,7 @@ public partial class MainWindow : Window
     private void ConfirmAndExit()
     {
         ShowFromTray();
+        CollapseMenu(animate: true);
         if (!ShowConfirm("종료하기", "정말로 종료하시겠습니까?"))
         {
             return;
@@ -325,6 +327,38 @@ public partial class MainWindow : Window
         CollapseMenu(animate: false);
     }
 
+    private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!_menuExpanded)
+        {
+            return;
+        }
+
+        if (e.OriginalSource is DependencyObject source && IsInside(source, SidePanel))
+        {
+            return;
+        }
+
+        CollapseMenu(animate: true);
+    }
+
+    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape && _menuExpanded)
+        {
+            CollapseMenu(animate: true);
+            e.Handled = true;
+        }
+    }
+
+    private void Window_Deactivated(object sender, EventArgs e)
+    {
+        if (_menuExpanded)
+        {
+            CollapseMenu(animate: true);
+        }
+    }
+
     private void Hamburger_Click(object sender, RoutedEventArgs e)
     {
         if (_menuExpanded)
@@ -335,6 +369,28 @@ public partial class MainWindow : Window
         {
             ExpandMenu();
         }
+    }
+
+    private static bool IsInside(DependencyObject current, DependencyObject ancestor)
+    {
+        DependencyObject? node = current;
+        while (node != null)
+        {
+            if (ReferenceEquals(node, ancestor))
+            {
+                return true;
+            }
+
+            DependencyObject? parent = VisualTreeHelper.GetParent(node);
+            if (parent == null && node is FrameworkElement element)
+            {
+                parent = element.Parent;
+            }
+
+            node = parent;
+        }
+
+        return false;
     }
 
     private void ExpandMenu()

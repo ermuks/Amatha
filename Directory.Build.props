@@ -4,9 +4,9 @@
          PATCH(세 번째): 수정/버그 수정
          MINOR(두 번째): 기능 추가
          MAJOR(첫 번째): 대규모 변경 -->
-    <Version>1.1.1</Version>
-    <AssemblyVersion>1.1.1.0</AssemblyVersion>
-    <FileVersion>1.1.1.0</FileVersion>
-    <InformationalVersion>1.1.1</InformationalVersion>
+    <Version>1.1.2</Version>
+    <AssemblyVersion>1.1.2.0</AssemblyVersion>
+    <FileVersion>1.1.2.0</FileVersion>
+    <InformationalVersion>1.1.2</InformationalVersion>
   </PropertyGroup>
 </Project>
