@@ -211,6 +211,7 @@ public partial class MainWindow : Window
         }
 
         Activate();
+        _ = CheckForUpdateAsync();
     }
 
     private void InitializeTray()

@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 internal static class AppVersion
 {
@@ -35,7 +36,12 @@ internal static class AppVersion
         if (informational.Length > 0)
         {
             int plus = informational.IndexOf('+');
-            return plus >= 0 ? informational.Substring(0, plus) : informational;
+            string value = plus >= 0 ? informational.Substring(0, plus) : informational;
+            Match match = Regex.Match(value, @"^\d+\.\d+(?:\.\d+){0,2}");
+            if (match.Success)
+            {
+                return match.Value;
+            }
         }
 
         Version? version = Assembly.GetExecutingAssembly().GetName().Version;
