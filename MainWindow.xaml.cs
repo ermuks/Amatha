@@ -203,21 +203,27 @@ public partial class MainWindow : Window
 
     private async Task TryAutoLoginAsync()
     {
-        if (!AppRuntime.Current.Settings.AutoLoginEnabled)
+        if (RootFrame.Content is not LoginPage loginPage)
         {
             return;
         }
 
-        if (RootFrame.Content is LoginPage loginPage)
+        SavedLogin? saved = AppRuntime.Current.Settings.AutoLoginEnabled
+            ? CredentialStore.Load()
+            : null;
+        if (saved != null)
         {
-            SavedLogin? saved = CredentialStore.Load();
-            if (saved != null)
-            {
-                loginPage.ViewModel.LoginId = saved.LoginId;
-                loginPage.ViewModel.StatusMessage = "자동 로그인 중...";
-                loginPage.ViewModel.IsBusy = true;
-            }
+            loginPage.ViewModel.LoginId = saved.LoginId;
         }
+
+        bool networkReady = await loginPage.EnsureNetworkAsync();
+        if (!networkReady || !AppRuntime.Current.Settings.AutoLoginEnabled || saved == null)
+        {
+            return;
+        }
+
+        loginPage.ViewModel.StatusMessage = "자동 로그인 중...";
+        loginPage.ViewModel.IsBusy = true;
 
         bool restored = await AppRuntime.Current.TryRestoreSessionAsync();
         if (RootFrame.Content is LoginPage busyPage)

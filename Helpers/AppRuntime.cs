@@ -112,8 +112,8 @@ public sealed class AppRuntime
 
         LoginId = saved.LoginId;
         Password = saved.Password;
-        int attempts = App.StartedFromWindowsStartup ? 12 : 3;
-        int delaySeconds = App.StartedFromWindowsStartup ? 10 : 2;
+        const int attempts = 3;
+        const int delaySeconds = 2;
 
         for (int attempt = 0; attempt < attempts; attempt++)
         {

@@ -15,6 +15,7 @@ public sealed class LoginViewModel : ObservableObject
     private string _errorMessage = string.Empty;
     private string _statusMessage = string.Empty;
     private bool _isBusy;
+    private bool _isWaitingForNetwork;
 
     public string LoginId
     {
@@ -43,7 +44,13 @@ public sealed class LoginViewModel : ObservableObject
     public string StatusMessage
     {
         get => _statusMessage;
-        set => SetProperty(ref _statusMessage, value);
+        set
+        {
+            if (SetProperty(ref _statusMessage, value))
+            {
+                OnPropertyChanged(nameof(HasStatusMessage));
+            }
+        }
     }
 
     public bool IsBusy
@@ -54,16 +61,49 @@ public sealed class LoginViewModel : ObservableObject
             if (SetProperty(ref _isBusy, value))
             {
                 OnPropertyChanged(nameof(IsIdle));
+                OnPropertyChanged(nameof(CanEditLogin));
                 OnPropertyChanged(nameof(LoginButtonText));
+            }
+        }
+    }
+
+    public bool IsWaitingForNetwork
+    {
+        get => _isWaitingForNetwork;
+        private set
+        {
+            if (SetProperty(ref _isWaitingForNetwork, value))
+            {
+                OnPropertyChanged(nameof(CanEditLogin));
             }
         }
     }
 
     public bool IsIdle => !IsBusy;
 
+    public bool CanEditLogin => !IsBusy && !IsWaitingForNetwork;
+
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
 
+    public bool HasStatusMessage => !string.IsNullOrWhiteSpace(StatusMessage);
+
     public string LoginButtonText => IsBusy ? "로그인 중" : "로그인";
+
+    public void BeginNetworkWait()
+    {
+        ErrorMessage = string.Empty;
+        StatusMessage = "인터넷 연결 대기 중...";
+        IsWaitingForNetwork = true;
+    }
+
+    public void EndNetworkWait()
+    {
+        IsWaitingForNetwork = false;
+        if (StatusMessage == "인터넷 연결 대기 중...")
+        {
+            StatusMessage = string.Empty;
+        }
+    }
 }
 
 public sealed class DashboardViewModel : ObservableObject
