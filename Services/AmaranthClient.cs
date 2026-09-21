@@ -466,9 +466,7 @@ public sealed class AmaranthClient
             names[date] = string.IsNullOrWhiteSpace(schedule.Name) ? defaultName : schedule.Name;
         }
 
-        foreach (BusinessTripDocument document in applications.Where(item =>
-                     !item.IsCancellation &&
-                     ApprovalStatus.IsClosed(item.DocumentStatus, item.DocumentStatusCode)))
+        foreach (BusinessTripDocument document in applications.Where(item => !item.IsCancellation))
         {
             string name = nameForApplication(document);
             foreach (DateTime date in GetCoveredDates(document))
@@ -524,14 +522,20 @@ public sealed class AmaranthClient
 
     private IEnumerable<DateTime> GetCoveredDates(BusinessTripDocument document)
     {
-        if (document.CoveredDates.Count > 0)
+        SortedSet<DateTime> knownDates = new();
+        foreach (DateTime date in document.CoveredDates)
         {
-            return document.CoveredDates.Select(date => date.Date).Distinct();
+            knownDates.Add(date.Date);
         }
 
-        if (document.WorkDays.Count > 0)
+        foreach (HolidayWorkDay day in document.WorkDays)
         {
-            return document.WorkDays.Select(day => day.WorkDate.Date).Distinct();
+            knownDates.Add(day.WorkDate.Date);
+        }
+
+        if (knownDates.Count > 0)
+        {
+            return knownDates;
         }
 
         if (!document.TripStartDate.HasValue || !document.TripEndDate.HasValue)
@@ -663,10 +667,20 @@ public sealed class AmaranthClient
 
     private static int GetHolidayOverlapDays(BusinessTripDocument document, DateTime startDate, DateTime endDate)
     {
-        if (document.WorkDays.Count > 0)
+        SortedSet<DateTime> dates = new();
+        foreach (HolidayWorkDay day in document.WorkDays)
         {
-            return document.WorkDays.Count(day =>
-                day.WorkDate.Date >= startDate.Date && day.WorkDate.Date <= endDate.Date);
+            dates.Add(day.WorkDate.Date);
+        }
+
+        foreach (DateTime date in document.CoveredDates)
+        {
+            dates.Add(date.Date);
+        }
+
+        if (dates.Count > 0)
+        {
+            return dates.Count(date => date >= startDate.Date && date <= endDate.Date);
         }
 
         if (!document.TripStartDate.HasValue || !document.TripEndDate.HasValue)
@@ -1404,8 +1418,13 @@ public sealed class AmaranthClient
             await GetApprovalDetailContentsAsync(session, summary, "휴일근무신청서");
 
         List<HolidayWorkDay> workDays = ParseHolidayWorkScheduleDays(contentsWord, docContents);
-        DateTime? startDate = workDays.Count > 0 ? workDays.Min(day => day.WorkDate.Date) : null;
-        DateTime? endDate = workDays.Count > 0 ? workDays.Max(day => day.WorkDate.Date) : null;
+        List<DateTime> periodDates = ParseHolidayWorkPeriodDates(contentsWord, docContents);
+        DateTime? startDate = workDays.Count > 0
+            ? workDays.Min(day => day.WorkDate.Date)
+            : periodDates.Count > 0 ? periodDates[0] : null;
+        DateTime? endDate = workDays.Count > 0
+            ? workDays.Max(day => day.WorkDate.Date)
+            : periodDates.Count > 0 ? periodDates[periodDates.Count - 1] : null;
         string startTime = workDays.Count > 0 ? workDays[0].StartTime : string.Empty;
         string endTime = workDays.Count > 0 ? workDays[0].EndTime : string.Empty;
 
@@ -1418,6 +1437,25 @@ public sealed class AmaranthClient
             startTime,
             endTime);
         document.WorkDays = workDays;
+
+        SortedSet<DateTime> covered = new(document.CoveredDates.Select(date => date.Date));
+        foreach (HolidayWorkDay day in workDays)
+        {
+            covered.Add(day.WorkDate.Date);
+        }
+
+        foreach (DateTime date in periodDates)
+        {
+            covered.Add(date.Date);
+        }
+
+        if (covered.Count > 0)
+        {
+            document.CoveredDates = covered.ToList();
+            document.TripStartDate ??= covered.Min();
+            document.TripEndDate ??= covered.Max();
+        }
+
         return document;
     }
 
@@ -1610,7 +1648,9 @@ public sealed class AmaranthClient
         }
 
         string normalized = NormalizeVisibleText(text);
-        foreach (Match match in Regex.Matches(normalized, @"(\d{4}-\d{2}-\d{2})\s*~\s*(\d{4}-\d{2}-\d{2})"))
+        foreach (Match match in Regex.Matches(
+                     normalized,
+                     @"(\d{4}-\d{2}-\d{2})(?:\s*\([^)]+\))?\s*~\s*(\d{4}-\d{2}-\d{2})"))
         {
             DateTime? start = ParseHyphenDate(match.Groups[1].Value);
             DateTime? end = ParseHyphenDate(match.Groups[2].Value);
@@ -1688,15 +1728,117 @@ public sealed class AmaranthClient
     private static List<HolidayWorkDay> ParseHolidayWorkScheduleDays(string contentsWord, string docContents)
     {
         Dictionary<DateTime, HolidayWorkDay> days = new();
+        foreach (HolidayWorkDay day in ParseHolidayWorkScheduleDaysFromHtml(docContents))
+        {
+            days[day.WorkDate.Date] = day;
+        }
+
         foreach (string text in new[] { contentsWord, ConvertHtmlToText(docContents) })
         {
             foreach (HolidayWorkDay day in ParseHolidayWorkScheduleDaysFromText(text))
             {
-                days[day.WorkDate.Date] = day;
+                if (!days.ContainsKey(day.WorkDate.Date))
+                {
+                    days[day.WorkDate.Date] = day;
+                }
             }
         }
 
         return days.Values.OrderBy(day => day.WorkDate).ToList();
+    }
+
+    private static List<DateTime> ParseHolidayWorkPeriodDates(string contentsWord, string docContents)
+    {
+        SortedSet<DateTime> dates = new();
+        foreach (string text in new[] { contentsWord, ConvertHtmlToText(docContents) })
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                continue;
+            }
+
+            string normalized = NormalizeVisibleText(text);
+            Match match = Regex.Match(
+                normalized,
+                @"근무기간\s*(\d{4}-\d{2}-\d{2})(?:\s*\([^)]+\))?\s*~\s*(\d{4}-\d{2}-\d{2})");
+            if (!match.Success)
+            {
+                continue;
+            }
+
+            DateTime? start = ParseHyphenDate(match.Groups[1].Value);
+            DateTime? end = ParseHyphenDate(match.Groups[2].Value);
+            if (!start.HasValue || !end.HasValue || end.Value < start.Value)
+            {
+                continue;
+            }
+
+            for (DateTime day = start.Value.Date; day <= end.Value.Date; day = day.AddDays(1))
+            {
+                dates.Add(day);
+            }
+        }
+
+        return dates.ToList();
+    }
+
+    private static List<HolidayWorkDay> ParseHolidayWorkScheduleDaysFromHtml(string html)
+    {
+        List<HolidayWorkDay> days = new();
+        if (string.IsNullOrWhiteSpace(html))
+        {
+            return days;
+        }
+
+        MatchCollection rowMatches = Regex.Matches(
+            html,
+            @"<tr\b[^>]*>(?<row>.*?)</tr>",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+        foreach (Match rowMatch in rowMatches)
+        {
+            string rowHtml = rowMatch.Groups["row"].Value;
+            string rowText = ConvertHtmlToText(rowHtml);
+            if (string.IsNullOrWhiteSpace(rowText) ||
+                rowText.Contains("총시간", StringComparison.Ordinal) ||
+                rowText.Contains("사용완료", StringComparison.Ordinal) ||
+                rowText.Contains("근무기간", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            Match timeMatch = Regex.Match(rowText, $@"({TimeValuePattern})\s*[~～\-]\s*({TimeValuePattern})");
+            if (!timeMatch.Success)
+            {
+                continue;
+            }
+
+            List<DateTime> rowDates = ExtractFlexibleDates(rowText);
+            if (rowDates.Count == 0)
+            {
+                continue;
+            }
+
+            string startTime = NormalizeClock(timeMatch.Groups[1].Value);
+            string endTime = NormalizeClock(timeMatch.Groups[2].Value);
+            if (string.IsNullOrWhiteSpace(startTime) || string.IsNullOrWhiteSpace(endTime))
+            {
+                continue;
+            }
+
+            days.Add(new HolidayWorkDay
+            {
+                WorkDate = rowDates[0].Date,
+                StartTime = startTime,
+                EndTime = endTime
+            });
+        }
+
+        return days
+            .GroupBy(day => day.WorkDate.Date)
+            .Select(group => group.First())
+            .OrderBy(day => day.WorkDate)
+            .ToList();
     }
 
     private static List<HolidayWorkDay> ParseHolidayWorkScheduleDaysFromText(string text)
