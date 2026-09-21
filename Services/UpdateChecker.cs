@@ -11,11 +11,16 @@ namespace Amaranth10API.Services;
 
 public sealed class AppUpdateInfo
 {
-    public AppUpdateInfo(Version latest, string latestLabel, Uri installerUri)
+    public AppUpdateInfo(
+        Version latest,
+        string latestLabel,
+        Uri installerUri,
+        IReadOnlyList<string>? changeNotes = null)
     {
         Latest = latest;
         LatestLabel = latestLabel;
         InstallerUri = installerUri;
+        ChangeNotes = changeNotes ?? Array.Empty<string>();
     }
 
     public Version Latest { get; }
@@ -23,6 +28,8 @@ public sealed class AppUpdateInfo
     public string LatestLabel { get; }
 
     public Uri InstallerUri { get; }
+
+    public IReadOnlyList<string> ChangeNotes { get; }
 }
 
 public static class UpdateChecker
@@ -71,7 +78,8 @@ public static class UpdateChecker
             installerUri = release.InstallerUri;
         }
 
-        return new AppUpdateInfo(latest, FormatLabel(latest), installerUri);
+        IReadOnlyList<string> notes = await TryReadChangeNotesAsync(cancellationToken).ConfigureAwait(false);
+        return new AppUpdateInfo(latest, FormatLabel(latest), installerUri, notes);
     }
 
     public static async Task<string> DownloadInstallerAsync(
@@ -258,6 +266,111 @@ public static class UpdateChecker
         {
             return null;
         }
+    }
+
+    private static async Task<IReadOnlyList<string>> TryReadChangeNotesAsync(CancellationToken cancellationToken)
+    {
+        string? sha = AppVersion.SourceRevision;
+        if (!string.IsNullOrWhiteSpace(sha) && sha!.Length >= 7)
+        {
+            Uri compareUri = new(
+                $"https://api.github.com/repos/{Owner}/{Repo}/compare/{sha}...{Branch}");
+            IReadOnlyList<string> fromCompare = ParseCommitMessages(
+                await TryGetStringAsync(compareUri, "application/vnd.github+json", cancellationToken)
+                    .ConfigureAwait(false),
+                newestFirst: false);
+            if (fromCompare.Count > 0)
+            {
+                return fromCompare;
+            }
+        }
+
+        Uri commitsUri = new(
+            $"https://api.github.com/repos/{Owner}/{Repo}/commits?sha={Branch}&per_page=12");
+        return ParseCommitMessages(
+            await TryGetStringAsync(commitsUri, "application/vnd.github+json", cancellationToken)
+                .ConfigureAwait(false),
+            newestFirst: true);
+    }
+
+    private static IReadOnlyList<string> ParseCommitMessages(string? json, bool newestFirst)
+    {
+        List<string> notes = new();
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return notes;
+        }
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(json!);
+            JsonElement root = document.RootElement;
+            JsonElement commits = root.ValueKind == JsonValueKind.Array
+                ? root
+                : root.TryGetProperty("commits", out JsonElement nested)
+                    ? nested
+                    : default;
+            if (commits.ValueKind != JsonValueKind.Array)
+            {
+                return notes;
+            }
+
+            List<string> collected = new();
+            foreach (JsonElement item in commits.EnumerateArray())
+            {
+                if (!item.TryGetProperty("commit", out JsonElement commit) ||
+                    !commit.TryGetProperty("message", out JsonElement messageElement))
+                {
+                    continue;
+                }
+
+                string? line = FirstCommitLine(messageElement.GetString());
+                if (line == null || collected.Contains(line))
+                {
+                    continue;
+                }
+
+                collected.Add(line);
+            }
+
+            if (!newestFirst)
+            {
+                collected.Reverse();
+            }
+
+            foreach (string line in collected)
+            {
+                notes.Add(line);
+                if (notes.Count >= 5)
+                {
+                    break;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            return notes;
+        }
+
+        return notes;
+    }
+
+    private static string? FirstCommitLine(string? message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return null;
+        }
+
+        string line = message!.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)[0].Trim();
+        if (line.Length == 0 ||
+            line.StartsWith("Merge ", StringComparison.OrdinalIgnoreCase) ||
+            line.StartsWith("병합", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return line.Length <= 72 ? line : line.Substring(0, 71) + "…";
     }
 
     private static async Task DownloadFileAsync(Uri uri, string destination, CancellationToken cancellationToken)

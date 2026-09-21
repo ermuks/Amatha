@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Drawing;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -157,7 +158,8 @@ public partial class MainWindow : Window
         AppUpdateInfo update = _availableUpdate;
         if (!ShowConfirm(
                 "업데이트",
-                "아맛다보고서 v" + update.LatestLabel + "를 설치할까요?\n설치를 시작하면 프로그램이 종료됩니다."))
+                "아맛다보고서 v" + update.LatestLabel + "를 설치할까요?",
+                FormatUpdateDetail(update)))
         {
             return;
         }
@@ -347,7 +349,7 @@ public partial class MainWindow : Window
         Close();
     }
 
-    internal bool ShowConfirm(string title, string message)
+    internal bool ShowConfirm(string title, string message, string? detail = null)
     {
         bool confirmed = false;
         DispatcherFrame frame = new();
@@ -356,12 +358,29 @@ public partial class MainWindow : Window
             confirmed = result;
             ConfirmOverlay.Visibility = Visibility.Collapsed;
             frame.Continue = false;
-        });
+        }, detail);
         ConfirmOverlay.Visibility = Visibility.Visible;
         ConfirmOverlay.Focus();
         ConfirmDialogHost.Focus();
         Dispatcher.PushFrame(frame);
         return confirmed;
+    }
+
+    private static string FormatUpdateDetail(AppUpdateInfo update)
+    {
+        StringBuilder text = new();
+        text.Append(AppVersion.Number).Append(" → ").Append(update.LatestLabel);
+        if (update.ChangeNotes.Count > 0)
+        {
+            text.AppendLine().AppendLine();
+            foreach (string note in update.ChangeNotes)
+            {
+                text.Append("· ").AppendLine(note);
+            }
+        }
+
+        text.AppendLine().Append("설치를 시작하면 프로그램이 종료됩니다.");
+        return text.ToString().TrimEnd();
     }
 
     private void ConfirmOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

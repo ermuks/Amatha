@@ -51,7 +51,8 @@
         </Style>
     </UserControl.Resources>
 
-    <Border Width="380"
+    <Border Width="420"
+            MaxWidth="440"
             Padding="28,26,28,22"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
@@ -79,6 +80,13 @@
                        Foreground="#2A3548"
                        TextWrapping="Wrap"
                        Text="정말로 종료하시겠습니까?" />
+            <TextBlock x:Name="DetailText"
+                       Margin="0,12,0,0"
+                       FontSize="13"
+                       LineHeight="20"
+                       Foreground="#6D7A8C"
+                       TextWrapping="Wrap"
+                       Visibility="Collapsed" />
             <StackPanel Margin="0,28,0,0"
                         Orientation="Horizontal"
                         HorizontalAlignment="Right">

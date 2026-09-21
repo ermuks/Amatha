@@ -26,6 +26,25 @@ internal static class AppVersion
 
     public static string InstallButtonLabel => "아맛다보고서 " + Number + " 설치";
 
+    public static string? SourceRevision
+    {
+        get
+        {
+            string informational = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                ?.InformationalVersion
+                ?? string.Empty;
+            int plus = informational.IndexOf('+');
+            if (plus < 0)
+            {
+                return null;
+            }
+
+            Match match = Regex.Match(informational.Substring(plus + 1), "[0-9a-fA-F]{7,40}");
+            return match.Success ? match.Value : null;
+        }
+    }
+
     private static string Read()
     {
         string informational = Assembly.GetExecutingAssembly()

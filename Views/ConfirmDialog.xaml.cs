@@ -13,20 +13,23 @@ public partial class ConfirmDialog : UserControl
         InitializeComponent();
     }
 
-    public static bool Ask(Window owner, string title, string message)
+    public static bool Ask(Window owner, string title, string message, string? detail = null)
     {
         if (owner is MainWindow mainWindow)
         {
-            return mainWindow.ShowConfirm(title, message);
+            return mainWindow.ShowConfirm(title, message, detail);
         }
 
-        return AskFallback(owner, title, message);
+        return AskFallback(owner, title, message, detail);
     }
 
-    public void Prepare(string title, string message, Action<bool> completed)
+    public void Prepare(string title, string message, Action<bool> completed, string? detail = null)
     {
         TitleText.Text = title;
         MessageText.Text = message;
+        bool hasDetail = !string.IsNullOrWhiteSpace(detail);
+        DetailText.Text = hasDetail ? detail : string.Empty;
+        DetailText.Visibility = hasDetail ? Visibility.Visible : Visibility.Collapsed;
         _completed = completed;
     }
 
@@ -66,7 +69,7 @@ public partial class ConfirmDialog : UserControl
         }
     }
 
-    private static bool AskFallback(Window? owner, string title, string message)
+    private static bool AskFallback(Window? owner, string title, string message, string? detail = null)
     {
         bool confirmed = false;
         Window window = new()
@@ -77,8 +80,7 @@ public partial class ConfirmDialog : UserControl
             Background = System.Windows.Media.Brushes.Transparent,
             ShowInTaskbar = false,
             ResizeMode = ResizeMode.NoResize,
-            Width = 420,
-            Height = 240,
+            SizeToContent = SizeToContent.WidthAndHeight,
             WindowStartupLocation = owner == null
                 ? WindowStartupLocation.CenterScreen
                 : WindowStartupLocation.CenterOwner
@@ -89,7 +91,7 @@ public partial class ConfirmDialog : UserControl
         {
             confirmed = result;
             window.Close();
-        });
+        }, detail);
         window.Content = dialog;
         window.PreviewKeyDown += (_, e) =>
         {
