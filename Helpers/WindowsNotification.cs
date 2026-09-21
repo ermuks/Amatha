@@ -28,15 +28,20 @@ public static class WindowsNotification
 
     public static Action<string, string>? TrayBalloon { get; set; }
 
-    public static void ShowMissingReports(int tripCount, int holidayCount, bool showGui = false)
+    public static void ShowMissingReports(
+        int tripCount,
+        int holidayCount,
+        int substituteCount = 0,
+        int substituteTimeCount = 0,
+        bool showGui = false)
     {
-        if (tripCount <= 0 && holidayCount <= 0)
+        if (tripCount <= 0 && holidayCount <= 0 && substituteCount <= 0 && substituteTimeCount <= 0)
         {
             return;
         }
 
-        string title = "작성하지 않은 보고서가 있습니다";
-        string body = FormatBody(tripCount, holidayCount);
+        string title = FormatTitle(tripCount, holidayCount, substituteCount, substituteTimeCount);
+        string body = FormatBody(tripCount, holidayCount, substituteCount, substituteTimeCount);
 
         void Show()
         {
@@ -101,7 +106,28 @@ public static class WindowsNotification
         }
     }
 
-    private static string FormatBody(int tripCount, int holidayCount)
+    private static string FormatTitle(int tripCount, int holidayCount, int substituteCount, int substituteTimeCount)
+    {
+        bool hasReports = tripCount > 0 || holidayCount > 0;
+        if (hasReports)
+        {
+            return "작성하지 않은 보고서가 있습니다";
+        }
+
+        if (substituteCount > 0 && substituteTimeCount > 0)
+        {
+            return "대체휴가 요청서를 확인해 주세요";
+        }
+
+        if (substituteTimeCount > 0)
+        {
+            return "대체휴가 요청서 시간이 다릅니다";
+        }
+
+        return "작성하지 않은 대체휴가 요청서가 있습니다";
+    }
+
+    private static string FormatBody(int tripCount, int holidayCount, int substituteCount, int substituteTimeCount)
     {
         List<string> parts = new();
         if (tripCount > 0)
@@ -112,6 +138,16 @@ public static class WindowsNotification
         if (holidayCount > 0)
         {
             parts.Add($"휴일근무 {holidayCount}건");
+        }
+
+        if (substituteCount > 0)
+        {
+            parts.Add($"대체휴가 {substituteCount}건");
+        }
+
+        if (substituteTimeCount > 0)
+        {
+            parts.Add($"대체휴가 시간 오류 {substituteTimeCount}건");
         }
 
         return string.Join(" · ", parts);

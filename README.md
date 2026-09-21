@@ -1,6 +1,6 @@
 # 아맛다보고서 (Amaranth10API)
 
-현재 버전은 `Directory.Build.props` 기준 **1.4.1**입니다.
+현재 버전은 `Directory.Build.props` 기준 **1.5.0**입니다.
 
 TEIA Amaranth 10 ERP에 로그인해, **작성하지 않은 출장·휴일근무 보고서**를 찾아 알려 주고, 보고서 작성 화면을 열어 초안을 채워 주는 Windows 데스크톱 앱입니다. 배포용으로 `Installer` 프로젝트(`아맛다보고서Install.exe`)가 본 프로그램 zip을 내장해 설치합니다. 실행 중 GitHub(`ermuks/Amatha`)에 더 새 버전이 있으면 창 아래에서 설치기를 받아 올립니다.
 
@@ -56,7 +56,7 @@ WebView2 Runtime(Edge 기반)이 없으면 보고서 작성 창과 사용자 매
 
 ```
 Amaranth10API/
-├── Directory.Build.props     앱·설치기 공통 버전 (1.4.1)
+├── Directory.Build.props     앱·설치기 공통 버전 (1.5.0)
 ├── AppVersion.cs             표시용 버전 문자열·비교용 Version
 ├── Amaranth10API.csproj      본 프로그램, 매뉴얼 복사
 ├── app.manifest              DPI / Windows 10 호환
@@ -149,8 +149,9 @@ SettingsStore        %AppData%\아맛다보고서\settings.json
 
 1. **출장 보고서 미작성**
 2. **휴일근무 보고서 미작성**
+3. **대체휴가 요청서** — 보고서가 대체휴무인데 요청서가 없거나, 날짜는 같고 시각이 다를 때
 
-둘 다 없으면 “지금은 비어 있습니다” 카드를 보여 줍니다.
+셋 다 없으면 “지금은 비어 있습니다” 카드를 보여 줍니다.
 
 각 카드는 `MissingPeriodViewModel`입니다.
 
@@ -168,7 +169,7 @@ SettingsStore        %AppData%\아맛다보고서\settings.json
 
 ### 5.3 메인 셸 (`MainWindow`)
 
-로그인 전에는 왼쪽 패널이 숨겨집니다. 대시보드에 들어가면 햄버거 메뉴가 나타납니다. 창 아래 상태 줄 오른쪽은 `ver 1.4.1` (`AppVersion.FooterLabel`), 왼쪽은 새 버전이 있을 때만 “새 버전이 있습니다. (v…)” 링크입니다.
+로그인 전에는 왼쪽 패널이 숨겨집니다. 대시보드에 들어가면 햄버거 메뉴가 나타납니다. 창 아래 상태 줄 오른쪽은 `ver 1.5.0` (`AppVersion.FooterLabel`), 왼쪽은 새 버전이 있을 때만 “새 버전이 있습니다. (v…)” 링크입니다.
 
 | 메뉴 | 위치 | 동작 |
 | --- | --- | --- |
@@ -253,6 +254,7 @@ Authorization: Bearer {authToken}
 - 보고서: 양식명 또는 제목에 `출장&휴일근무보고서`. **반려**(상태명 `반려` 또는 코드 `100`)는 건너뜁니다
 - 출장신청서: `FormId == 40` 또는 양식명에 `출장신청서` (보고서 문서는 제외). 반려는 건너뜁니다
 - 휴일근무신청서: `FormId == 43` 또는 양식명/제목에 `휴일근무신청서`. 반려는 건너뜁니다
+- 대체휴가 요청서: 양식명 또는 제목에 `대체휴가요청`. 제목의 `09-20 (08:00~17:00)`에서 날짜·시각을 읽습니다. 상세 API는 호출하지 않습니다
 
 상세는 `/eap/eap111A04` (`bindType=V`)입니다. 본문은 `contentsWord`(텍스트)와 `docContents`(HTML)입니다.
 
@@ -280,6 +282,10 @@ ERP 양식이 고정 JSON이 아니라 HTML·워드 텍스트라, 정규식으�
 - 문서 연도와 기간 연도가 어긋나면, 문서일 기준으로 ± 보정을 시도합니다
 - 휴일근무 행: 날짜 + 시간 구간, 보상 유형(`휴일근무수당`/`대체휴무`), 대체휴무일 텍스트
 
+**대체휴가 요청서**
+
+- 결재 목록 제목 `[대체휴가요청(1개)요청서]…(09-20 (08:00~17:00))`에서 월-일·시작/종료 시각
+
 파싱이 실패하면 해당 문서는 기간이 비어 미작성으로 남을 수 있습니다.
 
 ---
@@ -305,6 +311,14 @@ ERP 양식이 고정 JSON이 아니라 HTML·워드 텍스트라, 정규식으�
 - **반려·취소가 아닌** 휴일근무신청서의 `WorkDays`/`CoveredDates`/`근무기간`(없으면 신청 기간). 상세근무일정의 각 행과 `2026-09-19(토) ~ 2026-09-20(일)`처럼 요일이 붙은 기간도 모두 넣습니다. 결재가 진행 중이어도 신청한 날은 카드에 올립니다.
 
 보고서 `HolidayWorks`에 같은 날짜가 없으면 미작성입니다. 겹치는 휴일근무신청서를 카드 Hint·초안 시각에 씁니다.
+
+### 대체휴가 요청서
+
+보고서 휴일근무 행의 콤보가 **대체휴무**이면, 같은 결재 목록의 `[대체휴가요청…]` 제목과 맞춥니다.
+
+- 제목에 같은 월-일이 없으면 **대체휴가 미작성**
+- 날짜는 같고 시작·종료 시각이 다르면 **대체휴가 시간 오류**
+- `휴일근무수당`인 날은 요청서를 요구하지 않습니다
 
 ### 취소
 
@@ -355,11 +369,12 @@ ERP 양식이 고정 JSON이 아니라 HTML·워드 텍스트라, 정규식으�
 | `BusinessTripDocument` | 출장·휴일근무 신청서 상세 (`WorkDays`, `CoveredDates`, `IsCancellation`) |
 | `HolidayWorkDay` | 휴일근무신청서의 하루 시각 |
 | `BusinessTripReport` | 보고서 상세 + `HolidayWorks` |
-| `HolidayWorkEntry` | 보고서 안 휴일근무 한 행 |
+| `HolidayWorkEntry` | 보고서 안 휴일근무 한 행 (시각·보상 유형) |
+| `SubstituteHolidayRequest` / `Issue` | 대체휴가 요청서 제목 파싱과 미작성·시간 오류 |
 | `MissingReportPeriod` | 미작성 연속 구간 |
 | `ReportDraftFill` / `ReportHolidayDayFill` | WebView2 자동 입력 페이로드 |
 
-`AmaranthClient`는 `Schedules`, `BusinessTripDocuments`, `HolidayWorkDocuments`, `BusinessTripReports`를 멤버로 들고, 로드할 때마다 비운 뒤 다시 채웁니다.
+`AmaranthClient`는 `Schedules`, `BusinessTripDocuments`, `HolidayWorkDocuments`, `BusinessTripReports`, `SubstituteHolidayRequests`를 멤버로 들고, 로드할 때마다 비운 뒤 다시 채웁니다.
 
 ---
 
@@ -399,8 +414,8 @@ MAJOR(첫 번째): 대규모 변경
 
 `AppVersion`은 `AssemblyInformationalVersion`을 읽고(`+` git 해시는 자름), 없으면 `Major.Minor.Build`를 씁니다. `Current`는 비교용 `System.Version`입니다.
 
-- 본 프로그램 하단: `ver 1.4.1`
-- 설치기 첫 버튼: `아맛다보고서 1.4.1 설치`
+- 본 프로그램 하단: `ver 1.5.0`
+- 설치기 첫 버튼: `아맛다보고서 1.5.0 설치`
 
 버전을 올릴 때는 `Directory.Build.props`만 고치면 됩니다. GitHub `main`의 같은 파일과 최신 릴리스 태그가 업데이트 확인의 기준입니다.
 
@@ -469,7 +484,7 @@ User-Agent는 `AmathaBogoso/{버전}`입니다.
 
 `NotificationsEnabled`이고 로그인한 동안 `DispatcherTimer`가 `Dashboard.ReloadAsync(silent: true)`를 돌립니다. 이미 로딩 중이면 건너뜁니다.
 
-기간이 지난 미작성이 있으면 `WindowsNotification.ShowMissingReports`가 트레이 풍선을 띄웁니다. 제목은 “작성하지 않은 보고서가 있습니다”, 본문은 `출장 N건 · 휴일근무 M건`입니다. 풍선 클릭은 메인 창을 엽니다. Toast XML 경로는 예비용입니다.
+기간이 지난 미작성이 있으면 `WindowsNotification.ShowMissingReports`가 트레이 풍선을 띄웁니다. 제목은 “작성하지 않은 보고서가 있습니다”(대체휴가만 있으면 그에 맞는 문구), 본문은 `출장 N건 · 휴일근무 M건 · 대체휴가 K건 · 대체휴가 시간 오류 P건`입니다. 풍선 클릭은 메인 창을 엽니다. Toast XML 경로는 예비용입니다.
 
 네트워크가 끊겼다가 다시 붙고 `KeepSessionOnReconnect`가 켜져 있으면 UI 스레드에서 재로그인한 뒤 대시보드를 다시 초기화합니다.
 
@@ -487,7 +502,7 @@ User-Agent는 `AmathaBogoso/{버전}`입니다.
 
 | 파일 | 역할 |
 | --- | --- |
-| `Directory.Build.props` | 공통 버전 1.4.1 |
+| `Directory.Build.props` | 공통 버전 1.5.0 |
 | `AppVersion.cs` | 하단·설치 버튼 문자열, `Current` |
 | `App.xaml.cs` | 단일 인스턴스, TLS, 알림 초기화, 공유 Client, `--autostart` |
 | `MainWindow.xaml.cs` | 탐색, 트레이, 자동 로그인, 사이드 메뉴, 설정, 업데이트 링크 |

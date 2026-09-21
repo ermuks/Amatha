@@ -100,8 +100,32 @@ public sealed class BusinessTripReport
 public sealed class HolidayWorkEntry
 {
     public DateTime WorkDate { get; set; }
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
     public string CompensationType { get; set; } = string.Empty;
     public string SubstituteHolidayDateText { get; set; } = string.Empty;
+}
+
+public sealed class SubstituteHolidayRequest
+{
+    public int DocumentId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public int Month { get; set; }
+    public int Day { get; set; }
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
+}
+
+public sealed class SubstituteHolidayIssue
+{
+    public bool IsTimeMismatch { get; init; }
+    public DateTime WorkDate { get; init; }
+    public string ReportStartTime { get; init; } = string.Empty;
+    public string ReportEndTime { get; init; } = string.Empty;
+    public string RequestStartTime { get; init; } = string.Empty;
+    public string RequestEndTime { get; init; } = string.Empty;
+    public string ReportTitle { get; init; } = string.Empty;
+    public string RequestTitle { get; init; } = string.Empty;
 }
 
 public sealed class MissingReportPeriod

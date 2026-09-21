@@ -44,6 +44,7 @@ public sealed class AmaranthClient
     public List<BusinessTripDocument> BusinessTripDocuments { get; } = new();
     public List<BusinessTripDocument> HolidayWorkDocuments { get; } = new();
     public List<BusinessTripReport> BusinessTripReports { get; } = new();
+    public List<SubstituteHolidayRequest> SubstituteHolidayRequests { get; } = new();
 
     public async Task LoadDashboardAsync(
         AmaranthSession session,
@@ -51,6 +52,7 @@ public sealed class AmaranthClient
         AppSettings settings,
         IProgress<string>? progress = null)
     {
+        SubstituteHolidayRequests.Clear();
         progress?.Report("출장보고서를 불러오는 중...");
         DateTime reportStart = settings.ReportStart(referenceDate);
         DateTime reportEnd = settings.ReportEnd(referenceDate);
@@ -111,6 +113,8 @@ public sealed class AmaranthClient
                 {
                     continue;
                 }
+
+                RememberSubstituteHolidayRequest(summary);
 
                 bool isBusinessTripReport =
                     summary.FormName.Contains("출장&휴일근무보고서", StringComparison.OrdinalIgnoreCase) ||
@@ -178,6 +182,8 @@ public sealed class AmaranthClient
                     continue;
                 }
 
+                RememberSubstituteHolidayRequest(summary);
+
                 if (IsBusinessTripApplication(summary))
                 {
                     BusinessTripDocuments.Add(await GetBusinessTripDocumentDetailAsync(session, summary));
@@ -242,6 +248,80 @@ public sealed class AmaranthClient
     {
         return summary.FormName.Contains("출장&휴일근무보고서", StringComparison.OrdinalIgnoreCase) ||
                summary.Title.Contains("출장&휴일근무보고서", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsSubstituteHolidayRequest(ApprovalDocumentSummary summary)
+    {
+        return summary.FormName.Contains("대체휴가요청", StringComparison.OrdinalIgnoreCase) ||
+               summary.Title.Contains("대체휴가요청", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void RememberSubstituteHolidayRequest(ApprovalDocumentSummary summary)
+    {
+        if (!IsSubstituteHolidayRequest(summary) || IsCancelledApplication(summary))
+        {
+            return;
+        }
+
+        foreach (SubstituteHolidayRequest request in ParseSubstituteHolidayRequests(summary))
+        {
+            bool exists = SubstituteHolidayRequests.Any(item =>
+                item.DocumentId == request.DocumentId &&
+                item.Month == request.Month &&
+                item.Day == request.Day &&
+                item.StartTime == request.StartTime &&
+                item.EndTime == request.EndTime);
+            if (!exists)
+            {
+                SubstituteHolidayRequests.Add(request);
+            }
+        }
+    }
+
+    private static List<SubstituteHolidayRequest> ParseSubstituteHolidayRequests(ApprovalDocumentSummary summary)
+    {
+        List<SubstituteHolidayRequest> requests = new();
+        if (string.IsNullOrWhiteSpace(summary.Title))
+        {
+            return requests;
+        }
+
+        string pattern =
+            @"(\d{1,2})\s*[-./]\s*(\d{1,2})\s*\(\s*(" +
+            TimeValuePattern +
+            @")\s*[~～\-]\s*(" +
+            TimeValuePattern +
+            @")";
+
+        foreach (Match match in Regex.Matches(summary.Title, pattern))
+        {
+            if (!int.TryParse(match.Groups[1].Value, out int month) ||
+                !int.TryParse(match.Groups[2].Value, out int day) ||
+                month is < 1 or > 12 ||
+                day is < 1 or > 31)
+            {
+                continue;
+            }
+
+            string startTime = NormalizeClock(match.Groups[3].Value);
+            string endTime = NormalizeClock(match.Groups[4].Value);
+            if (string.IsNullOrWhiteSpace(startTime) || string.IsNullOrWhiteSpace(endTime))
+            {
+                continue;
+            }
+
+            requests.Add(new SubstituteHolidayRequest
+            {
+                DocumentId = summary.DocumentId,
+                Title = summary.Title,
+                Month = month,
+                Day = day,
+                StartTime = startTime,
+                EndTime = endTime
+            });
+        }
+
+        return requests;
     }
 
     private static bool IsCancelledApplication(ApprovalDocumentSummary summary)
@@ -444,6 +524,67 @@ public sealed class AmaranthClient
             date => FindHolidayWorkEntry(date) == null);
 
         return GroupMissingPeriods(missingDays, "휴일근무");
+    }
+
+    public List<SubstituteHolidayIssue> GetSubstituteHolidayIssues()
+    {
+        List<SubstituteHolidayIssue> issues = new();
+        foreach (BusinessTripReport report in BusinessTripReports)
+        {
+            foreach (HolidayWorkEntry entry in report.HolidayWorks)
+            {
+                if (!string.Equals(entry.CompensationType, "대체휴무", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                DateTime workDate = entry.WorkDate.Date;
+                List<SubstituteHolidayRequest> matches = SubstituteHolidayRequests
+                    .Where(request => request.Month == workDate.Month && request.Day == workDate.Day)
+                    .ToList();
+                if (matches.Count == 0)
+                {
+                    issues.Add(new SubstituteHolidayIssue
+                    {
+                        WorkDate = workDate,
+                        ReportStartTime = entry.StartTime,
+                        ReportEndTime = entry.EndTime,
+                        ReportTitle = report.Title
+                    });
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(entry.StartTime) || string.IsNullOrWhiteSpace(entry.EndTime))
+                {
+                    continue;
+                }
+
+                SubstituteHolidayRequest? sameTime = matches.Find(request =>
+                    request.StartTime == entry.StartTime && request.EndTime == entry.EndTime);
+                if (sameTime != null)
+                {
+                    continue;
+                }
+
+                SubstituteHolidayRequest first = matches[0];
+                issues.Add(new SubstituteHolidayIssue
+                {
+                    IsTimeMismatch = true,
+                    WorkDate = workDate,
+                    ReportStartTime = entry.StartTime,
+                    ReportEndTime = entry.EndTime,
+                    RequestStartTime = first.StartTime,
+                    RequestEndTime = first.EndTime,
+                    ReportTitle = report.Title,
+                    RequestTitle = first.Title
+                });
+            }
+        }
+
+        return issues
+            .OrderBy(issue => issue.WorkDate)
+            .ThenBy(issue => issue.IsTimeMismatch)
+            .ToList();
     }
 
     private List<WorkSchedule> CollectActiveMissingDays(
@@ -955,10 +1096,22 @@ public sealed class AmaranthClient
 
         foreach (HolidayWorkEntry entry in ParseHolidayWorkEntriesFromText(contentsWord))
         {
-            if (!holidayWorks.ContainsKey(entry.WorkDate.Date))
+            if (holidayWorks.TryGetValue(entry.WorkDate.Date, out HolidayWorkEntry? existing))
             {
-                holidayWorks.Add(entry.WorkDate.Date, entry);
+                if (string.IsNullOrWhiteSpace(existing.StartTime))
+                {
+                    existing.StartTime = entry.StartTime;
+                }
+
+                if (string.IsNullOrWhiteSpace(existing.EndTime))
+                {
+                    existing.EndTime = entry.EndTime;
+                }
+
+                continue;
             }
+
+            holidayWorks.Add(entry.WorkDate.Date, entry);
         }
 
         return holidayWorks.Values
@@ -990,7 +1143,7 @@ public sealed class AmaranthClient
 
         MatchCollection matches = Regex.Matches(
             holidaySection,
-            $@"(\d{{4}})\s*년\s*(\d{{1,2}})\s*월\s*(\d{{1,2}})\s*일\s+{TimeRangePattern}");
+            $@"(\d{{4}})\s*년\s*(\d{{1,2}})\s*월\s*(\d{{1,2}})\s*일\s+({TimeValuePattern})\s*[~～\-]\s*({TimeValuePattern})");
 
         foreach (Match match in matches)
         {
@@ -1007,6 +1160,8 @@ public sealed class AmaranthClient
             holidayWorks.Add(new HolidayWorkEntry
             {
                 WorkDate = workDate.Value.Date,
+                StartTime = NormalizeClock(match.Groups[4].Value),
+                EndTime = NormalizeClock(match.Groups[5].Value),
                 CompensationType = "휴일근무수당"
             });
         }
@@ -1058,9 +1213,12 @@ public sealed class AmaranthClient
                 substituteHolidayDateText = cellValues[compensationCellIndex + 1];
             }
 
+            Match timeMatch = Regex.Match(rowText, $@"({TimeValuePattern})\s*[~～\-]\s*({TimeValuePattern})");
             holidayWorks.Add(new HolidayWorkEntry
             {
                 WorkDate = rowDates[0].Date,
+                StartTime = timeMatch.Success ? NormalizeClock(timeMatch.Groups[1].Value) : string.Empty,
+                EndTime = timeMatch.Success ? NormalizeClock(timeMatch.Groups[2].Value) : string.Empty,
                 CompensationType = compensationType,
                 SubstituteHolidayDateText = substituteHolidayDateText
             });

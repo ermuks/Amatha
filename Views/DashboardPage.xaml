@@ -22,7 +22,7 @@
                                    Text="지금은 비어 있습니다" />
                         <TextBlock Margin="0,6,0,0" FontSize="13"
                                    Foreground="{StaticResource MutedInkBrush}"
-                                   Text="출장과 휴일근무 모두 보고서가 작성되어 있습니다." />
+                                   Text="출장·휴일근무 보고서와 대체휴가 요청서가 모두 맞습니다." />
                     </StackPanel>
                 </Border>
 
@@ -147,6 +147,67 @@
                                                        VerticalAlignment="Center"
                                                        HorizontalAlignment="Right"
                                                        FontSize="22"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{StaticResource NavyBrush}"
+                                                       Text="{Binding DayCountText}" />
+                                        </Grid>
+                                    </Border>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Grid Margin="0,18,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource NavyMutedBrush}"
+                                   Text="대체휴가 요청서" />
+                        <TextBlock Grid.Column="1" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource NavyBrush}"
+                                   Text="{Binding SubstituteCountLabel}" />
+                    </Grid>
+
+                    <TextBlock FontSize="13" Foreground="{StaticResource MutedInkBrush}"
+                               Margin="0,0,0,10"
+                               Text="{Binding SubstituteEmptyText}"
+                               Visibility="{Binding HasSubstituteIssues, Converter={StaticResource HiddenIfTrue}}" />
+
+                    <ItemsControl ItemsSource="{Binding SubstituteHolidayIssues}"
+                                  Visibility="{Binding HasSubstituteIssues, Converter={StaticResource VisibleIfTrue}}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:MissingPeriodViewModel}">
+                                <Button Style="{StaticResource CardButtonStyle}" Click="Period_Click">
+                                    <Border Style="{StaticResource MissingCardBorderStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="6" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Background="{Binding AccentBrush}" CornerRadius="3" />
+                                            <StackPanel Grid.Column="1" Margin="14,0,12,0">
+                                                <TextBlock FontSize="15" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource InkBrush}"
+                                                           Text="{Binding Name}" />
+                                                <TextBlock Margin="0,4,0,0" FontSize="14"
+                                                           Foreground="{StaticResource NavyBrush}"
+                                                           Text="{Binding PeriodText}" />
+                                                <TextBlock Margin="0,6,0,0" FontSize="12"
+                                                           Foreground="{StaticResource MutedInkBrush}"
+                                                           Text="{Binding Hint}" TextWrapping="Wrap"
+                                                           Visibility="{Binding HintVisibility}" />
+                                                <TextBlock Margin="0,8,0,0" FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource InProgressBrush}"
+                                                           Text="{Binding StatusText}" TextWrapping="Wrap"
+                                                           Visibility="{Binding StatusVisibility}" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Right"
+                                                       FontSize="18"
                                                        FontWeight="SemiBold"
                                                        Foreground="{StaticResource NavyBrush}"
                                                        Text="{Binding DayCountText}" />

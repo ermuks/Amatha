@@ -29,6 +29,18 @@ public partial class DashboardPage : Page
         }
 
         MissingPeriodViewModel? period = (sender as FrameworkElement)?.DataContext as MissingPeriodViewModel;
+        if (period is { OpensReportDraft: false })
+        {
+            MessageBox.Show(
+                owner,
+                string.IsNullOrWhiteSpace(period.StatusText)
+                    ? "대체휴가 요청서를 확인해 주세요."
+                    : period.StatusText,
+                "대체휴가",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
 
         try
         {
