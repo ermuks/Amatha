@@ -223,7 +223,7 @@ public sealed class AmaranthClient
 
     private static bool IsBusinessTripApplication(ApprovalDocumentSummary summary)
     {
-        if (IsTripHolidayReport(summary))
+        if (IsTripHolidayReport(summary) || IsLeaveUsageApplication(summary))
         {
             return false;
         }
@@ -234,7 +234,7 @@ public sealed class AmaranthClient
 
     private static bool IsHolidayWorkApplication(ApprovalDocumentSummary summary)
     {
-        if (IsTripHolidayReport(summary))
+        if (IsTripHolidayReport(summary) || IsLeaveUsageApplication(summary))
         {
             return false;
         }
@@ -250,8 +250,20 @@ public sealed class AmaranthClient
                summary.Title.Contains("출장&휴일근무보고서", StringComparison.OrdinalIgnoreCase);
     }
 
+    // 연차·대체휴가 사용 문서 — 출장/휴일근무 보고서 대상 아님
+    private static bool IsLeaveUsageApplication(ApprovalDocumentSummary summary)
+    {
+        return summary.FormName.Contains("휴가신청서", StringComparison.OrdinalIgnoreCase) ||
+               summary.Title.Contains("휴가신청서", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsSubstituteHolidayRequest(ApprovalDocumentSummary summary)
     {
+        if (IsLeaveUsageApplication(summary))
+        {
+            return false;
+        }
+
         return summary.FormName.Contains("대체휴가요청", StringComparison.OrdinalIgnoreCase) ||
                summary.Title.Contains("대체휴가요청", StringComparison.OrdinalIgnoreCase);
     }
@@ -338,6 +350,20 @@ public sealed class AmaranthClient
 
         return value.Contains("취소신청", StringComparison.Ordinal) ||
                value.Contains("상신취소", StringComparison.Ordinal);
+    }
+
+    private static bool IsLeaveUsageSchedule(WorkSchedule schedule)
+    {
+        if (schedule.FormName.Contains("휴가신청서", StringComparison.OrdinalIgnoreCase) ||
+            schedule.Title.Contains("휴가신청서", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        string name = schedule.Name ?? string.Empty;
+        return name.Contains("대체휴가", StringComparison.Ordinal) ||
+               name.Contains("연차", StringComparison.Ordinal) ||
+               name.Equals("휴가", StringComparison.Ordinal);
     }
 
     public async Task<AmaranthSession> LoginAsync(string id, string pw)
@@ -598,7 +624,8 @@ public sealed class AmaranthClient
 
         foreach (WorkSchedule schedule in calendarDays)
         {
-            if (ContainsCancelMark(schedule.Title) || ContainsCancelMark(schedule.FormName))
+            if (ContainsCancelMark(schedule.Title) || ContainsCancelMark(schedule.FormName) ||
+                IsLeaveUsageSchedule(schedule))
             {
                 continue;
             }
