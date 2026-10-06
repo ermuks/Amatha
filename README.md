@@ -1,6 +1,6 @@
 # 아맛다보고서 (Amaranth10API)
 
-현재 버전은 `Directory.Build.props` 기준 **1.5.2**입니다.
+현재 버전은 `Directory.Build.props` 기준 **1.6.0**입니다.
 
 TEIA Amaranth 10 ERP에 로그인해, **작성하지 않은 출장·휴일근무 보고서**를 찾아 알려 주고, 보고서 작성 화면을 열어 초안을 채워 주는 Windows 데스크톱 앱입니다. 배포용으로 `Installer` 프로젝트(`아맛다보고서Install.exe`)가 본 프로그램 zip을 내장해 설치합니다. 실행 중 GitHub(`ermuks/Amatha`)에 더 새 버전이 있으면 창 아래에서 설치기를 받아 올립니다.
 
@@ -56,7 +56,7 @@ WebView2 Runtime(Edge 기반)이 없으면 보고서 작성 창과 사용자 매
 
 ```
 Amaranth10API/
-├── Directory.Build.props     앱·설치기 공통 버전 (1.5.2)
+├── Directory.Build.props     앱·설치기 공통 버전 (1.6.0)
 ├── AppVersion.cs             표시용 버전 문자열·비교용 Version
 ├── Amaranth10API.csproj      본 프로그램, 매뉴얼 복사
 ├── app.manifest              DPI / Windows 10 호환
@@ -163,13 +163,14 @@ SettingsStore        %AppData%\아맛다보고서\settings.json
 - 오늘이 기간 **안**이면 `IsOngoing` — 초록 톤 카드, “현재 출장 중 · …” / “휴일근무 중 · …”
 - 연결된 신청서가 **진행**(코드 30)이면 “결재가 아직 종결되지 않았습니다”를 덧붙입니다
 - **알림(`ShouldNotify`)은 기간이 지난 뒤에만** 켭니다
+- **2시간 동안 알리지 않음**을 체크하면 해당 카드의 알림만 중지합니다. 카드는 목록에 남고, 새로고침·재실행 후에도 체크한 시점부터 2시간까지 유지됩니다. 체크를 풀거나 2시간이 지나면 다음 알림 주기에 다시 포함됩니다. 체크박스 클릭은 보고서 창을 열지 않습니다.
 - 클릭 시 `ReportBrowserWindow.OpenDraft`으로 작성 창을 엽니다
 
 작성 창을 닫으면 대시보드를 조용히 다시 불러와 목록을 갱신합니다.
 
 ### 5.3 메인 셸 (`MainWindow`)
 
-로그인 전에는 왼쪽 패널이 숨겨집니다. 대시보드에 들어가면 햄버거 메뉴가 나타납니다. 창 아래 상태 줄 오른쪽은 `ver 1.5.2` (`AppVersion.FooterLabel`), 왼쪽은 새 버전이 있을 때만 “새 버전이 있습니다. (v…)” 링크입니다.
+로그인 전에는 왼쪽 패널이 숨겨집니다. 대시보드에 들어가면 햄버거 메뉴가 나타납니다. 창 아래 상태 줄 오른쪽은 `ver 1.6.0` (`AppVersion.FooterLabel`), 왼쪽은 새 버전이 있을 때만 “새 버전이 있습니다. (v…)” 링크입니다.
 
 | 메뉴 | 위치 | 동작 |
 | --- | --- | --- |
@@ -337,6 +338,8 @@ ERP 양식이 고정 JSON이 아니라 HTML·워드 텍스트라, 정규식으�
 
 `ShouldNotify`는 **오늘이 기간 종료일보다 이후일 때만** true입니다. 예정·진행 중 카드는 보이되 트레이 알림 건수에는 넣지 않습니다.
 
+실제 알림 집계는 `CanNotify`를 사용합니다. `ShouldNotify`가 true이고 **2시간 동안 알리지 않음**이 해제된 항목만 포함됩니다. 중지 만료는 UTC 절대 시각으로 저장하며, 회사·사용자·카드 종류·기간별로 구분합니다. 만료된 체크는 다음 목록 새로고침 때 풀립니다. 이 기능은 출장·휴일근무·대체휴가 미작성·대체휴가 시간 오류 카드에 적용됩니다.
+
 ---
 
 ## 8. 보고서 초안 자동 입력 (`Helpers/ReportDraftFiller`)
@@ -415,8 +418,8 @@ MAJOR(첫 번째): 대규모 변경
 
 `AppVersion`은 `AssemblyInformationalVersion`을 읽고(`+` git 해시는 자름), 없으면 `Major.Minor.Build`를 씁니다. `Current`는 비교용 `System.Version`입니다.
 
-- 본 프로그램 하단: `ver 1.5.2`
-- 설치기 첫 버튼: `아맛다보고서 1.5.2 설치`
+- 본 프로그램 하단: `ver 1.6.0`
+- 설치기 첫 버튼: `아맛다보고서 1.6.0 설치`
 
 버전을 올릴 때는 `Directory.Build.props`만 고치면 됩니다. GitHub `main`의 같은 파일과 최신 릴리스 태그가 업데이트 확인의 기준입니다.
 
@@ -469,6 +472,7 @@ User-Agent는 `AmathaBogoso/{버전}`입니다.
 | 경로 | 내용 |
 | --- | --- |
 | `%AppData%\아맛다보고서\settings.json` | 환경설정 |
+| `%AppData%\아맛다보고서\notification-snoozes.json` | 카드별 알림 중지 만료 시각 (체크한 시점부터 2시간) |
 | `%AppData%\아맛다보고서\login.bin` | DPAPI(`CurrentUser`)로 막은 아이디·비밀번호. 엔트로피 문자열 `Teia.AmattahReport.Login` |
 | `%LocalAppData%\아맛다보고서\WebView2` | 보고서 작성 WebView2 프로필 |
 | `%LocalAppData%\아맛다보고서\WebView2Manual` | 매뉴얼 WebView2 프로필 |
@@ -503,7 +507,7 @@ User-Agent는 `AmathaBogoso/{버전}`입니다.
 
 | 파일 | 역할 |
 | --- | --- |
-| `Directory.Build.props` | 공통 버전 1.5.2 |
+| `Directory.Build.props` | 공통 버전 1.6.0 |
 | `AppVersion.cs` | 하단·설치 버튼 문자열, `Current` |
 | `App.xaml.cs` | 단일 인스턴스, TLS, 알림 초기화, 공유 Client, `--autostart` |
 | `MainWindow.xaml.cs` | 탐색, 트레이, 자동 로그인, 사이드 메뉴, 설정, 업데이트 링크 |

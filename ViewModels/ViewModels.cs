@@ -109,6 +109,7 @@ public sealed class LoginViewModel : ObservableObject
 public sealed class DashboardViewModel : ObservableObject
 {
     private readonly AmaranthClient _client;
+    private readonly NotificationSnoozeStore _notificationSnoozes;
     private readonly SemaphoreSlim _loadLock = new(1, 1);
     private AmaranthSession? _session;
     private string _statusMessage = "데이터를 불러오는 중...";
@@ -125,9 +126,10 @@ public sealed class DashboardViewModel : ObservableObject
     private int _missingHolidayCount;
     private int _substituteIssueCount;
 
-    public DashboardViewModel(AmaranthClient client)
+    public DashboardViewModel(AmaranthClient client, NotificationSnoozeStore? notificationSnoozes = null)
     {
         _client = client;
+        _notificationSnoozes = notificationSnoozes ?? AppRuntime.Current.NotificationSnoozes;
     }
 
     public ObservableCollection<MissingPeriodViewModel> MissingTrips { get; } = new();
@@ -323,10 +325,10 @@ public sealed class DashboardViewModel : ObservableObject
         }
 
         WindowsNotification.ShowMissingReports(
-            MissingTrips.Count(item => item.ShouldNotify),
-            MissingHolidayWorks.Count(item => item.ShouldNotify),
-            SubstituteHolidayIssues.Count(item => item.ShouldNotify && !item.IsTimeMismatch),
-            SubstituteHolidayIssues.Count(item => item.ShouldNotify && item.IsTimeMismatch),
+            MissingTrips.Count(item => item.CanNotify),
+            MissingHolidayWorks.Count(item => item.CanNotify),
+            SubstituteHolidayIssues.Count(item => item.CanNotify && !item.IsTimeMismatch),
+            SubstituteHolidayIssues.Count(item => item.CanNotify && item.IsTimeMismatch),
             settings.ShowGuiOnNotification);
     }
 
@@ -363,7 +365,7 @@ public sealed class DashboardViewModel : ObservableObject
         SubstituteEmptyText = HasSubstituteIssues ? string.Empty : "대체휴가 요청서는 모두 맞습니다.";
     }
 
-    private static MissingPeriodViewModel CreateItem(MissingReportPeriod period)
+    private MissingPeriodViewModel CreateItem(MissingReportPeriod period)
     {
         BusinessTripDocument? application = period.RelatedApplication;
         bool hasApplication = application != null;
@@ -374,7 +376,9 @@ public sealed class DashboardViewModel : ObservableObject
         bool isOngoing = today >= startDate && today <= endDate;
         bool isTrip = period.Kind == "출장" || period.Name.Contains("출장");
 
-        return new MissingPeriodViewModel
+        return new MissingPeriodViewModel(
+            _notificationSnoozes,
+            CreateNotificationKey(period.Kind + ":" + period.Name, startDate, endDate))
         {
             Name = period.Name,
             PeriodText = FormatPeriod(period.StartDate, period.EndDate),
@@ -401,7 +405,7 @@ public sealed class DashboardViewModel : ObservableObject
         };
     }
 
-    private static MissingPeriodViewModel CreateSubstituteItem(SubstituteHolidayIssue issue)
+    private MissingPeriodViewModel CreateSubstituteItem(SubstituteHolidayIssue issue)
     {
         DateTime workDate = issue.WorkDate.Date;
         string reportTime = FormatTimeRange(issue.ReportStartTime, issue.ReportEndTime);
@@ -413,7 +417,9 @@ public sealed class DashboardViewModel : ObservableObject
             ? issue.RequestTitle
             : issue.ReportTitle;
 
-        return new MissingPeriodViewModel
+        return new MissingPeriodViewModel(
+            _notificationSnoozes,
+            CreateNotificationKey(issue.IsTimeMismatch ? "대체휴가:시간오류" : "대체휴가:미작성", workDate, workDate))
         {
             Name = issue.IsTimeMismatch ? "대체휴가 시간 오류" : "대체휴가 미작성",
             PeriodText = FormatPeriod(workDate, workDate),
@@ -427,6 +433,12 @@ public sealed class DashboardViewModel : ObservableObject
             OpensReportDraft = false,
             AccentBrush = SchedulePalette.GetBrush("대체휴가")
         };
+    }
+
+    private string CreateNotificationKey(string kind, DateTime start, DateTime end)
+    {
+        // 사용자와 날짜·종류로 식별해 카드가 새로 만들어져도 체크 상태를 유지합니다.
+        return $"{_session?.CompanySequence}|{_session?.EmployeeSequence}|{kind}|{start:yyyyMMdd}|{end:yyyyMMdd}";
     }
 
     private static string FormatCount(int count) => count == 0 ? "없음" : $"{count}건";
@@ -553,8 +565,35 @@ public sealed class DashboardViewModel : ObservableObject
     }
 }
 
-public sealed class MissingPeriodViewModel
+public sealed class MissingPeriodViewModel : ObservableObject
 {
+    private readonly NotificationSnoozeStore _notificationSnoozes;
+    private readonly string _notificationKey;
+
+    public MissingPeriodViewModel(NotificationSnoozeStore notificationSnoozes, string notificationKey)
+    {
+        _notificationSnoozes = notificationSnoozes;
+        _notificationKey = notificationKey;
+    }
+
+    public bool IsNotificationSnoozed
+    {
+        get => _notificationSnoozes.IsSnoozed(_notificationKey);
+        set
+        {
+            if (value == IsNotificationSnoozed)
+            {
+                return;
+            }
+
+            _notificationSnoozes.SetSnoozed(_notificationKey, value);
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanNotify));
+        }
+    }
+
+    public bool CanNotify => ShouldNotify && !IsNotificationSnoozed;
+
     public string Name { get; init; } = string.Empty;
     public string PeriodText { get; init; } = string.Empty;
     public string DayCountText { get; init; } = string.Empty;

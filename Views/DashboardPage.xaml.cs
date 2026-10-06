@@ -17,6 +17,12 @@ public partial class DashboardPage : Page
         Loaded += async (_, _) => await ViewModel.InitializeAsync(session);
     }
 
+    private void NotificationSnooze_Click(object sender, RoutedEventArgs e)
+    {
+        // 체크박스 클릭이 카드의 보고서 작성 버튼으로 전달되지 않도록 합니다.
+        e.Handled = true;
+    }
+
     private void Period_Click(object sender, RoutedEventArgs e)
     {
         Window? owner = Window.GetWindow(this);

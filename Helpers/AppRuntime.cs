@@ -50,6 +50,8 @@ public sealed class AppRuntime
 
     public AppSettings Settings { get; }
 
+    public NotificationSnoozeStore NotificationSnoozes { get; } = new(NotificationSnoozeStore.DefaultFilePath);
+
     public string LoginId { get; set; } = string.Empty;
 
     public string Password { get; set; } = string.Empty;

@@ -58,6 +58,7 @@
 
   <ItemGroup>
     <Compile Remove="Installer\**" />
+    <Compile Remove="Tests\**" />
     <Page Remove="Installer\**" />
     <EmbeddedResource Remove="Installer\**" />
     <None Remove="Installer\**" />

@@ -5,6 +5,18 @@
       FontFamily="Segoe UI"
       Title="보고서"
       Background="{StaticResource CanvasBrush}">
+    <Page.Resources>
+        <Style x:Key="NotificationSnoozeCheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="Content" Value="2시간 동안 알리지 않음" />
+            <Setter Property="ToolTip" Value="체크한 항목의 알림을 2시간 동안 중지합니다. 체크를 풀거나 2시간이 지나면 다음 알림 주기에 다시 포함됩니다." />
+            <Setter Property="IsChecked" Value="{Binding IsNotificationSnoozed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Setter Property="Margin" Value="0,12,0,0" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource MutedInkBrush}" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+    </Page.Resources>
     <Grid>
         <ScrollViewer
             Padding="16,16,28,28"
@@ -77,6 +89,8 @@
                                                            Foreground="{StaticResource InProgressBrush}"
                                                            Text="{Binding StatusText}" TextWrapping="Wrap"
                                                            Visibility="{Binding StatusVisibility}" />
+                                                <CheckBox Style="{StaticResource NotificationSnoozeCheckBoxStyle}"
+                                                          Click="NotificationSnooze_Click" />
                                             </StackPanel>
                                             <TextBlock Grid.Column="2"
                                                        VerticalAlignment="Center"
@@ -142,6 +156,8 @@
                                                            Foreground="{StaticResource InProgressBrush}"
                                                            Text="{Binding StatusText}" TextWrapping="Wrap"
                                                            Visibility="{Binding StatusVisibility}" />
+                                                <CheckBox Style="{StaticResource NotificationSnoozeCheckBoxStyle}"
+                                                          Click="NotificationSnooze_Click" />
                                             </StackPanel>
                                             <TextBlock Grid.Column="2"
                                                        VerticalAlignment="Center"
@@ -203,6 +219,8 @@
                                                            Foreground="{StaticResource InProgressBrush}"
                                                            Text="{Binding StatusText}" TextWrapping="Wrap"
                                                            Visibility="{Binding StatusVisibility}" />
+                                                <CheckBox Style="{StaticResource NotificationSnoozeCheckBoxStyle}"
+                                                          Click="NotificationSnooze_Click" />
                                             </StackPanel>
                                             <TextBlock Grid.Column="2"
                                                        VerticalAlignment="Center"
