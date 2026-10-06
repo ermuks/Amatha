@@ -19,6 +19,7 @@ public partial class ReportBrowserWindow : Window
     private readonly string? _startUrl;
     private readonly bool _hostExternalNavigation;
     private readonly ReportDraftFill? _fill;
+    private readonly BusinessTripDocument? _applicationDocument;
     private readonly WebView2 _browser = new();
     private Task<CoreWebView2>? _initializeTask;
     private bool _fillStarted;
@@ -27,15 +28,24 @@ public partial class ReportBrowserWindow : Window
         AmaranthSession session,
         string? startUrl = null,
         bool hostExternalNavigation = false,
-        ReportDraftFill? fill = null)
+        ReportDraftFill? fill = null,
+        BusinessTripDocument? applicationDocument = null)
     {
         _session = session;
         _startUrl = startUrl;
         _hostExternalNavigation = hostExternalNavigation;
         _fill = fill;
+        _applicationDocument = applicationDocument;
         InitializeComponent();
         ApplyWindowIcon();
         AddressBox.Text = _startUrl ?? AmaranthClient.CreateReportDraftUrl();
+        if (_applicationDocument != null)
+        {
+            Title = "신청서 보기";
+            AddressBox.Text = "신청서 원문 · " + _applicationDocument.Title;
+            AddressBox.ToolTip = "ERP에서 조회한 기존 신청서의 원문입니다.";
+            LoadingText.Text = "신청서를 여는 중...";
+        }
         BrowserHost.Children.Insert(0, _browser);
         PlaceOnScreen();
         Loaded += Window_Loaded;
@@ -56,20 +66,30 @@ public partial class ReportBrowserWindow : Window
         return _initializeTask ??= InitializeCoreInternalAsync();
     }
 
+    public static void OpenApplication(Window? owner, AmaranthSession session, BusinessTripDocument document)
+    {
+        ReportBrowserWindow window = new(session, applicationDocument: document) { Owner = owner };
+        window.Show();
+    }
+
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
         Loaded -= Window_Loaded;
         try
         {
             CoreWebView2 core = await InitializeCoreAsync();
-            if (!_hostExternalNavigation)
+            if (_applicationDocument != null)
+            {
+                core.NavigateToString(ApplicationDocumentHtml.Create(_applicationDocument));
+            }
+            else if (!_hostExternalNavigation)
             {
                 core.Navigate(_startUrl ?? AmaranthClient.CreateReportDraftUrl());
             }
         }
         catch (WebView2RuntimeNotFoundException)
         {
-            ShowLoadError("보고서 화면을 열려면 Microsoft Edge WebView2 Runtime이 필요합니다.");
+            ShowLoadError("문서를 보려면 Microsoft Edge WebView2 Runtime이 필요합니다.");
         }
         catch (Exception exception)
         {
@@ -90,7 +110,20 @@ public partial class ReportBrowserWindow : Window
         core.HistoryChanged += (_, _) => UpdateAddress();
         core.NavigationCompleted += Core_NavigationCompleted;
         core.NewWindowRequested += Core_NewWindowRequested;
-        ApplySessionCookies(core);
+        if (_applicationDocument == null)
+        {
+            ApplySessionCookies(core);
+        }
+        else
+        {
+            // 원문 조회 화면에서 링크나 양식 제출로 ERP의 다른 화면에 이동하지 않습니다.
+            core.NavigationStarting += (_, e) =>
+            {
+                bool isLocalDocument = string.Equals(e.Uri, "about:blank", StringComparison.OrdinalIgnoreCase) ||
+                    e.Uri.StartsWith("data:text/html", StringComparison.OrdinalIgnoreCase);
+                if (!isLocalDocument) e.Cancel = true;
+            };
+        }
         UpdateAddress();
         return core;
     }
@@ -127,6 +160,12 @@ public partial class ReportBrowserWindow : Window
 
     private async void Core_NewWindowRequested(object? sender, CoreWebView2NewWindowRequestedEventArgs e)
     {
+        if (_applicationDocument != null)
+        {
+            e.Handled = true;
+            return;
+        }
+
         CoreWebView2Deferral deferral = e.GetDeferral();
         e.Handled = true;
         try
@@ -161,7 +200,7 @@ public partial class ReportBrowserWindow : Window
         UpdateAddress();
         if (!e.IsSuccess && LoadingOverlay.Visibility == Visibility.Visible)
         {
-            ShowLoadError("보고서 작성 화면을 열지 못했습니다.");
+            ShowLoadError(_applicationDocument != null ? "신청서를 열지 못했습니다." : "보고서 작성 화면을 열지 못했습니다.");
             return;
         }
 
@@ -196,6 +235,12 @@ public partial class ReportBrowserWindow : Window
 
     private async void UpdateAddress()
     {
+        if (_applicationDocument != null)
+        {
+            AddressBox.Text = "신청서 원문 · " + _applicationDocument.Title;
+            return;
+        }
+
         string? address = null;
         try
         {
@@ -257,7 +302,7 @@ public partial class ReportBrowserWindow : Window
     private async void Window_Closed(object? sender, EventArgs e)
     {
         Closed -= Window_Closed;
-        if (_hostExternalNavigation)
+        if (_hostExternalNavigation || _applicationDocument != null)
         {
             return;
         }

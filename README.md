@@ -1,8 +1,8 @@
 # 아맛다보고서 (Amaranth10API)
 
-현재 버전은 `Directory.Build.props` 기준 **1.6.0**입니다.
+현재 버전은 `Directory.Build.props` 기준 **1.6.1**입니다.
 
-TEIA Amaranth 10 ERP에 로그인해, **작성하지 않은 출장·휴일근무 보고서**를 찾아 알려 주고, 보고서 작성 화면을 열어 초안을 채워 주는 Windows 데스크톱 앱입니다. 배포용으로 `Installer` 프로젝트(`아맛다보고서Install.exe`)가 본 프로그램 zip을 내장해 설치합니다. 실행 중 GitHub(`ermuks/Amatha`)에 더 새 버전이 있으면 창 아래에서 설치기를 받아 올립니다.
+TEIA Amaranth 10 ERP에 로그인해, **작성하지 않은 출장·휴일근무 보고서**를 찾아 알려 주고, 카드에 연결된 기존 신청서를 내장 WebView2로 보여 주는 Windows 데스크톱 앱입니다. 배포용으로 `Installer` 프로젝트(`아맛다보고서Install.exe`)가 본 프로그램 zip을 내장해 설치합니다. 실행 중 GitHub(`ermuks/Amatha`)에 더 새 버전이 있으면 창 아래에서 설치기를 받아 올립니다.
 
 표시 이름(어셈블리명·제품명)은 **아맛다보고서**, 코드 루트 네임스페이스와 프로젝트 파일명은 `Amaranth10API`입니다.
 
@@ -19,7 +19,7 @@ TEIA Amaranth 10 ERP에 로그인해, **작성하지 않은 출장·휴일근무
 
 근태 캘린더에 아직 안 올라온 **예정 출장·휴일근무**도 신청서 기간으로 카드에 올립니다. 제목·양식명에 `취소신청`/`상신취소`가 있으면 그 날짜는 미작성에서 뺍니다. `[휴가신청서] 대체휴가…`처럼 **휴가신청서**(연차·대체휴가 사용)는 보고서 대상이 아니어서 목록에서 제외합니다.
 
-작성되지 않은 구간은 대시보드에 카드로 보여 주고, 카드를 누르면 ERP의 보고서 작성 팝업을 WebView2로 연 다음 기간·구분·휴일근무 시각을 자동 입력합니다.
+작성되지 않은 구간은 대시보드에 카드로 보여 주고, 카드를 누르면 연결된 기존 신청서의 원문을 내장 WebView2로 엽니다. 신청서가 연결되어 있지 않으면 ERP에서 확인하라는 안내를 표시합니다. 보고서 작성·상신은 사용자가 ERP에서 진행합니다.
 
 브라우저로 ERP에 들어가 목록을 훑는 일을 줄이는 것이 목적입니다. 결재 상신 자체는 ERP 화면에서 사용자가 마무리합니다.
 
@@ -44,7 +44,7 @@ TEIA Amaranth 10 ERP에 로그인해, **작성하지 않은 출장·휴일근무
 
 출력 형식은 `WinExe`입니다. 콘솔이 아니라 창(또는 트레이)으로 실행됩니다.
 
-WebView2 Runtime(Edge 기반)이 없으면 보고서 작성 창과 사용자 매뉴얼 창을 열 수 없습니다. 로그인·목록 조회는 HTTP만으로 동작합니다.
+WebView2 Runtime(Edge 기반)이 없으면 신청서 보기 창과 사용자 매뉴얼 창을 열 수 없습니다. 로그인·목록 조회는 HTTP만으로 동작합니다.
 
 `Helpers/IsExternalInit.cs`는 net48에서 `init` 접근자를 쓰기 위한 폴리필입니다.
 
@@ -56,7 +56,7 @@ WebView2 Runtime(Edge 기반)이 없으면 보고서 작성 창과 사용자 매
 
 ```
 Amaranth10API/
-├── Directory.Build.props     앱·설치기 공통 버전 (1.6.0)
+├── Directory.Build.props     앱·설치기 공통 버전 (1.6.1)
 ├── AppVersion.cs             표시용 버전 문자열·비교용 Version
 ├── Amaranth10API.csproj      본 프로그램, 매뉴얼 복사
 ├── app.manifest              DPI / Windows 10 호환
@@ -74,7 +74,7 @@ Amaranth10API/
 ├── Views/
 │   ├── LoginPage             로그인
 │   ├── DashboardPage         미작성 목록
-│   ├── ReportBrowserWindow   WebView2 보고서 작성
+│   ├── ReportBrowserWindow   WebView2 신청서 원문 조회
 │   ├── ManualWindow          WebView2 사용자 매뉴얼
 │   ├── TrayMenuWindow        트레이 우클릭 메뉴
 │   └── ConfirmDialog         종료 확인 (UserControl)
@@ -164,13 +164,13 @@ SettingsStore        %AppData%\아맛다보고서\settings.json
 - 연결된 신청서가 **진행**(코드 30)이면 “결재가 아직 종결되지 않았습니다”를 덧붙입니다
 - **알림(`ShouldNotify`)은 기간이 지난 뒤에만** 켭니다
 - **2시간 동안 알리지 않음**을 체크하면 해당 카드의 알림만 중지합니다. 카드는 목록에 남고, 새로고침·재실행 후에도 체크한 시점부터 2시간까지 유지됩니다. 체크를 풀거나 2시간이 지나면 다음 알림 주기에 다시 포함됩니다. 체크박스 클릭은 보고서 창을 열지 않습니다.
-- 클릭 시 `ReportBrowserWindow.OpenDraft`으로 작성 창을 엽니다
+- 클릭 시 `ReportBrowserWindow.OpenApplication`으로 연결된 기존 신청서 원문을 엽니다
 
-작성 창을 닫으면 대시보드를 조용히 다시 불러와 목록을 갱신합니다.
+신청서 보기 창은 조회 전용이며 닫을 때 추가 API 조회를 실행하지 않습니다.
 
 ### 5.3 메인 셸 (`MainWindow`)
 
-로그인 전에는 왼쪽 패널이 숨겨집니다. 대시보드에 들어가면 햄버거 메뉴가 나타납니다. 창 아래 상태 줄 오른쪽은 `ver 1.6.0` (`AppVersion.FooterLabel`), 왼쪽은 새 버전이 있을 때만 “새 버전이 있습니다. (v…)” 링크입니다.
+로그인 전에는 왼쪽 패널이 숨겨집니다. 대시보드에 들어가면 햄버거 메뉴가 나타납니다. 창 아래 상태 줄 오른쪽은 `ver 1.6.1` (`AppVersion.FooterLabel`), 왼쪽은 새 버전이 있을 때만 “새 버전이 있습니다. (v…)” 링크입니다.
 
 | 메뉴 | 위치 | 동작 |
 | --- | --- | --- |
@@ -184,9 +184,13 @@ SettingsStore        %AppData%\아맛다보고서\settings.json
 
 Windows 시작 + **트레이로 시작**이 켜져 있으면, 첫 렌더 후 창을 숨기고 작업 표시줄에도 올리지 않습니다.
 
-### 5.4 보고서 작성 창 (`ReportBrowserWindow`)
+### 5.4 신청서 보기 창 (`ReportBrowserWindow`)
 
-WebView2로 ERP 팝업 URL을 엽니다.
+미작성 카드에는 `RelatedApplication`의 원문이 `ApplicationDocument`로 연결됩니다. 기존 WebView2 창에서 `ApplicationDocumentHtml`로 감싼 `DocContents`를 표시하며, HTML이 없으면 `ContentsWord` 텍스트를 표시합니다. 양식 스타일·문서 제목·문서번호·결재 상태를 함께 보여 줍니다.
+
+원문 조회에는 이미 불러온 본문을 사용합니다. 새 작성 화면으로 이동하거나 초안을 입력하지 않으며, 원문 안의 스크립트·폼 제출·다른 페이지 이동은 허용하지 않습니다. 대체휴가 미작성·시간 오류 카드는 종전처럼 확인 안내를 표시합니다.
+
+보고서 초안 입력 코드는 내부에 남아 있지만 목록 클릭에서는 사용하지 않습니다. 기존 작성 URL은 다음과 같습니다.
 
 ```
 https://erp.teia.co.kr/#/popup?MicroModuleCode=eap&formId=208&callComp=UBAP001&popupUUID={guid}
@@ -316,7 +320,7 @@ ERP 양식이 고정 JSON이 아니라 HTML·워드 텍스트라, 정규식으�
 
 ### 대체휴가 요청서
 
-보고서 휴일근무 행의 콤보가 **대체휴무**이면, 같은 결재 목록의 `[대체휴가요청…]` 제목과 맞춥니다.
+보고서 휴일근무 행의 콤보가 **대체휴무**이면, 같은 결재 목록의 `[대체휴가요청…]` 제목과 맞춥니다. 날짜는 시각 앞의 **실제 근무일**만 읽습니다. `2026년 9월 20일`처럼 월·일 앞에 0이 없는 표기도 지원하며, 뒤의 대체휴무 사용예정일은 근무일로 판정하지 않습니다.
 
 - 제목에 같은 월-일이 없으면 **대체휴가 미작성**
 - 날짜는 같고 시작·종료 시각이 다르면 **대체휴가 시간 오류**
@@ -344,7 +348,7 @@ ERP 양식이 고정 JSON이 아니라 HTML·워드 텍스트라, 정규식으�
 
 ## 8. 보고서 초안 자동 입력 (`Helpers/ReportDraftFiller`)
 
-카드의 `ReportDraftFill`을 JSON으로 만든 뒤, WebView2에 스크립트를 넣습니다. 최대 약 25초 동안 DOM(iframe 포함)을 찾아 채웁니다. 채울 기간은 **미작성 구간 날짜**입니다 (신청서 전체 기간이 아님).
+아래는 내부에 남아 있는 초안 입력 기능의 설명입니다. 현재 목록 클릭은 기존 신청서 보기로 연결되며 이 기능을 실행하지 않습니다. `ReportDraftFill`을 JSON으로 만든 뒤 WebView2에 스크립트를 넣으면, 최대 약 25초 동안 DOM(iframe 포함)을 찾아 채웁니다. 채울 기간은 **미작성 구간 날짜**입니다 (신청서 전체 기간이 아님).
 
 출장 카드:
 
@@ -418,8 +422,8 @@ MAJOR(첫 번째): 대규모 변경
 
 `AppVersion`은 `AssemblyInformationalVersion`을 읽고(`+` git 해시는 자름), 없으면 `Major.Minor.Build`를 씁니다. `Current`는 비교용 `System.Version`입니다.
 
-- 본 프로그램 하단: `ver 1.6.0`
-- 설치기 첫 버튼: `아맛다보고서 1.6.0 설치`
+- 본 프로그램 하단: `ver 1.6.1`
+- 설치기 첫 버튼: `아맛다보고서 1.6.1 설치`
 
 버전을 올릴 때는 `Directory.Build.props`만 고치면 됩니다. GitHub `main`의 같은 파일과 최신 릴리스 태그가 업데이트 확인의 기준입니다.
 
@@ -507,7 +511,7 @@ User-Agent는 `AmathaBogoso/{버전}`입니다.
 
 | 파일 | 역할 |
 | --- | --- |
-| `Directory.Build.props` | 공통 버전 1.6.0 |
+| `Directory.Build.props` | 공통 버전 1.6.1 |
 | `AppVersion.cs` | 하단·설치 버튼 문자열, `Current` |
 | `App.xaml.cs` | 단일 인스턴스, TLS, 알림 초기화, 공유 Client, `--autostart` |
 | `MainWindow.xaml.cs` | 탐색, 트레이, 자동 로그인, 사이드 메뉴, 설정, 업데이트 링크 |
@@ -522,7 +526,7 @@ User-Agent는 `AmathaBogoso/{버전}`입니다.
 | `Helpers/WindowsNotification.cs` | AUMID, 바로가기, 풍선/토스트 |
 | `Helpers/StartupRegistration.cs` | 시작 폴더 바로가기 |
 | `Helpers/ScreenPlacement.cs` | 다중 모니터 DIP 좌표, 포커스 |
-| `Views/ReportBrowserWindow.xaml.cs` | 쿠키 주입, 팝업, 초안 입력, 닫힌 뒤 새로고침 |
+| `Views/ReportBrowserWindow.xaml.cs` | 신청서 원문 표시, 기존 ERP 팝업·초안 입력 지원 코드 |
 | `Views/ManualWindow.xaml.cs` | 로컬 HTML 매뉴얼 |
 | `docs/사용매뉴얼.html` | 빌드 시 `ReadMe.html`로 복사 |
 | `dist/아맛다보고서Install.exe` | GitHub에서 받는 설치기 사본 |
@@ -537,7 +541,7 @@ User-Agent는 `AmathaBogoso/{버전}`입니다.
 - 이미 실행 중이면 설치기가 프로세스를 닫은 다음 파일을 덮어씁니다.
 - ERP 주소·그룹 시퀀스·양식 ID는 코드 상수입니다. 서버가 바뀌면 `AmaranthClient`를 고쳐야 합니다.
 - ERP HTML 양식이 바뀌면 기간·휴일근무 파싱과 자동 입력이 깨질 수 있습니다.
-- 이 앱은 조회·초안 입력까지입니다. 결재선·첨부·상신은 ERP WebView에서 사용자가 합니다.
+- 이 앱은 미작성 판정과 신청서 원문 조회를 제공합니다. 보고서 작성·결재선·첨부·상신은 ERP에서 사용자가 진행합니다.
 - 창을 닫아도 프로세스는 트레이에 남습니다. 완전히 끄려면 종료 확인을 거쳐야 합니다.
 - 두 번째 exe를 켜면 기존 창만 앞으로 나옵니다.
 

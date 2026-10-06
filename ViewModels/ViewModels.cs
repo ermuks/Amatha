@@ -385,6 +385,7 @@ public sealed class DashboardViewModel : ObservableObject
             DayCountText = period.DayCount == 1 ? "1일" : $"{period.DayCount}일",
             Hint = hasApplication ? application!.Title : string.Empty,
             ProjectCode = application?.ProjectCode ?? string.Empty,
+            ApplicationDocument = application,
             StatusText = BuildStatusText(application, isTrip, isUpcoming, isOngoing),
             StartDate = period.StartDate,
             EndDate = period.EndDate,
@@ -430,7 +431,7 @@ public sealed class DashboardViewModel : ObservableObject
             EndDate = workDate,
             ShouldNotify = DateTime.Today > workDate,
             IsTimeMismatch = issue.IsTimeMismatch,
-            OpensReportDraft = false,
+            OpensApplicationDocument = false,
             AccentBrush = SchedulePalette.GetBrush("대체휴가")
         };
     }
@@ -599,13 +600,14 @@ public sealed class MissingPeriodViewModel : ObservableObject
     public string DayCountText { get; init; } = string.Empty;
     public string Hint { get; init; } = string.Empty;
     public string ProjectCode { get; init; } = string.Empty;
+    public BusinessTripDocument? ApplicationDocument { get; init; }
     public string StatusText { get; init; } = string.Empty;
     public DateTime StartDate { get; init; }
     public DateTime EndDate { get; init; }
     public bool IsOngoing { get; init; }
     public bool ShouldNotify { get; init; }
     public bool IsTimeMismatch { get; init; }
-    public bool OpensReportDraft { get; init; } = true;
+    public bool OpensApplicationDocument { get; init; } = true;
     public ReportDraftFill Fill { get; init; } = new();
     public SolidColorBrush AccentBrush { get; init; } = SchedulePalette.GetBrush("출장");
     public Visibility HintVisibility => string.IsNullOrWhiteSpace(Hint) ? Visibility.Collapsed : Visibility.Visible;

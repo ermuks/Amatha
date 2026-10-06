@@ -29,13 +29,13 @@ public partial class DashboardPage : Page
         AmaranthSession? session = AppRuntime.Current.Session;
         if (session == null)
         {
-            MessageBox.Show(owner, "로그인 세션이 없습니다. 다시 로그인해 주세요.", "보고서 작성",
+            MessageBox.Show(owner, "로그인 세션이 없습니다. 다시 로그인해 주세요.", "신청서 보기",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         MissingPeriodViewModel? period = (sender as FrameworkElement)?.DataContext as MissingPeriodViewModel;
-        if (period is { OpensReportDraft: false })
+        if (period is { OpensApplicationDocument: false })
         {
             MessageBox.Show(
                 owner,
@@ -50,11 +50,18 @@ public partial class DashboardPage : Page
 
         try
         {
-            ReportBrowserWindow.OpenDraft(owner, session, period?.Fill);
+            if (period?.ApplicationDocument == null)
+            {
+                MessageBox.Show(owner, "이 항목에 연결된 신청서를 찾지 못했습니다. ERP에서 신청서를 확인해 주세요.", "신청서 보기",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            ReportBrowserWindow.OpenApplication(owner, session, period.ApplicationDocument);
         }
         catch (Exception exception)
         {
-            MessageBox.Show(owner, FormatException(exception), "보고서 작성", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(owner, FormatException(exception), "신청서 보기", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

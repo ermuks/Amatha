@@ -6,6 +6,8 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using Microsoft.Web.WebView2.Core;
 using Amaranth10API.Helpers;
 using Amaranth10API.Models;
 using Amaranth10API.Services;
@@ -22,8 +24,9 @@ internal static class Program
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
     [STAThread]
-    private static int Main()
+    private static int Main(string[] args)
     {
+        if (args.Contains("--webview-smoke")) return WebViewSmoke();
         Run("2시간 직전과 정확한 만료 시점", ExpiryBoundary);
         Run("해제와 재체크의 만료 시간", UncheckAndRecheck);
         Run("재실행 후 남은 시간 유지와 해제 저장", Persistence);
@@ -33,6 +36,11 @@ internal static class Program
         Run("사용자·종류·날짜별 상태 분리", KeyIsolation);
         Run("알림 집계·해제·만료 후 다음 사이클", NotificationCycles);
         Run("체크박스 클릭은 보고서 창을 열지 않음", CheckBoxRouting);
+        Run("한 자리 월·일과 유효하지 않은 날짜", FlexibleDateParsing);
+        Run("대체휴가 사용예정일을 근무일로 인식하지 않음", SubstituteDateRegression);
+        Run("휴가 사용 문서는 보고서·요청서 대상으로 분류하지 않음", LeaveUsageClassification);
+        Run("카드가 기존 신청서 원문을 보관함", ApplicationDocumentLink);
+        Run("신청서 HTML과 텍스트 원문 표시", ApplicationHtml);
         Run("실제 대시보드 XAML 체크박스와 화면 렌더링", DashboardLayout);
         Console.WriteLine($"RESULT: {_passed} passed, {_failed} failed");
         return _failed == 0 ? 0 : 1;
@@ -266,6 +274,73 @@ internal static class Program
         }
     }
 
+    private static T Parse<T>(string method, params object[] args) => (T)typeof(AmaranthClient)
+        .GetMethod(method, BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, args)!;
+
+    private static void FlexibleDateParsing()
+    {
+        foreach (string text in new[] { "2026년 9월 20일", "2026 년 09 월 20 일", "2026-9-20", "2026/09/20", "2026.9.20", "20260920" })
+        {
+            var dates = Parse<List<DateTime>>("ExtractFlexibleDates", text);
+            Assert(dates.Count == 1 && dates[0] == new DateTime(2026, 9, 20), "날짜를 정확히 읽어야 합니다: " + text);
+        }
+        Assert(Parse<List<DateTime>>("ExtractFlexibleDates", "2026년 2월 30일 / 2026-13-1").Count == 0, "유효하지 않은 날짜는 제외해야 합니다.");
+        Assert(Parse<List<DateTime>>("ExtractFlexibleDates", "2024년 2월 29일").Single() == new DateTime(2024, 2, 29), "윤년 날짜를 읽어야 합니다.");
+    }
+
+    private static void SubstituteDateRegression()
+    {
+        // 실제 ERP 오탐의 구조를 개인정보 없는 예제로 재현합니다.
+        string html = "<table><tr><td>2026년 9월 20일</td><td>08:00 ~ 17:00</td><td>(1)일</td>" +
+            "<td><select><option>휴일근무수당</option><option selected>대체휴무</option></select></td><td>2026-09-28</td></tr></table>";
+        var entries = Parse<List<HolidayWorkEntry>>("ParseHolidayWorkEntries", html, "휴일근무 2026년 9월 20일 08:00~17:00 합계");
+        Assert(entries.Count == 1 && entries[0].WorkDate == new DateTime(2026, 9, 20), "사용예정일 9/28을 새 근무일로 추가하면 안 됩니다.");
+        Assert(entries[0].CompensationType == "대체휴무" && entries[0].SubstituteHolidayDateText == "2026-09-28", "근무일과 사용예정일을 분리해서 보관해야 합니다.");
+        var client = new AmaranthClient();
+        client.BusinessTripReports.Add(new BusinessTripReport { HolidayWorks = entries });
+        client.SubstituteHolidayRequests.Add(new SubstituteHolidayRequest { Month = 9, Day = 20, StartTime = "08:00", EndTime = "17:00" });
+        Assert(client.GetSubstituteHolidayIssues().Count == 0, "근무일 요청서가 있으면 사용예정일의 미작성 알림이 생기면 안 됩니다.");
+        string missingWorkDate = html.Replace("2026년 9월 20일", "년 월 일");
+        Assert(Parse<List<HolidayWorkEntry>>("ParseHolidayWorkEntriesFromHtml", missingWorkDate).Count == 0, "근무일이 없으면 사용예정일로 대체하면 안 됩니다.");
+    }
+
+    private static void LeaveUsageClassification()
+    {
+        foreach (string form in new[] { "휴가신청서", "연차휴가신청서" })
+        {
+            var summary = new ApprovalDocumentSummary { FormId = 40, FormName = form, Title = "[" + form + "] 대체휴가 사용" };
+            Assert(!Parse<bool>("IsBusinessTripApplication", summary), "휴가 사용 문서는 출장 대상이 아닙니다.");
+            Assert(!Parse<bool>("IsHolidayWorkApplication", summary), "휴가 사용 문서는 휴일근무 대상이 아닙니다.");
+            Assert(!Parse<bool>("IsSubstituteHolidayRequest", summary), "휴가 사용 문서는 대체휴가 발생 요청서가 아닙니다.");
+        }
+    }
+
+    private static void ApplicationDocumentLink()
+    {
+        var store = new NotificationSnoozeStore(utcNow: () => Start);
+        var client = FixtureClient();
+        DateTime day = client.Schedules[0].Date;
+        var trip = new BusinessTripDocument { DocumentId = 40, FormId = 40, TripStartDate = day, TripEndDate = day, DocContents = "<p>출장 신청서 원문</p>" };
+        var holiday = new BusinessTripDocument { DocumentId = 43, FormId = 43, TripStartDate = day, TripEndDate = day, DocContents = "<p>휴일근무 신청서 원문</p>" };
+        client.BusinessTripDocuments.Add(trip);
+        client.HolidayWorkDocuments.Add(holiday);
+        var dashboard = Dashboard(client, store);
+        Assert(ReferenceEquals(dashboard.MissingTrips.Single().ApplicationDocument, trip), "출장 카드에 신청서가 연결되어야 합니다.");
+        Assert(ReferenceEquals(dashboard.MissingHolidayWorks.Single().ApplicationDocument, holiday), "휴일근무 카드에 신청서가 연결되어야 합니다.");
+        Assert(Dashboard(FixtureClient(), store).MissingTrips.Single().ApplicationDocument == null, "신청서가 없을 때 새 문서를 만들어 연결하면 안 됩니다.");
+    }
+
+    private static void ApplicationHtml()
+    {
+        string html = ApplicationDocumentHtml.Create(new BusinessTripDocument { Title = "신청서 <제목>", DocumentNumber = "TEST-1", DocumentStatus = "종결", DocContents = "<html><head><style>td{color:red}</style></head><body><table><tr><td>원문 날짜</td></tr></table></body></html>" });
+        Assert(html.Contains("신청서 &lt;제목&gt;") && html.Contains("TEST-1"), "제목은 HTML 이스케이프하고 문서 정보를 표시해야 합니다.");
+        Assert(html.Contains("<table><tr><td>원문 날짜</td>") && html.Contains("td{color:red}"), "원문 본문과 양식 스타일을 유지해야 합니다.");
+        Assert(html.Contains("Content-Security-Policy") && html.Contains("form-action 'none'"), "원문 보기에서 스크립트·폼 제출을 허용하면 안 됩니다.");
+        string fallback = ApplicationDocumentHtml.Create(new BusinessTripDocument { ContentsWord = "텍스트 <원문>" });
+        Assert(fallback.Contains("<pre>텍스트 &lt;원문&gt;</pre>"), "HTML이 없으면 텍스트 원문을 표시해야 합니다.");
+        Assert(ApplicationDocumentHtml.Create(new BusinessTripDocument()).Contains("신청서 본문이 없습니다"), "본문이 없으면 안내를 표시해야 합니다.");
+    }
+
     private static void DashboardLayout()
     {
         // Application.Run/Window.Show를 호출하지 않으므로 자동 로그인·ERP 호출은 실행되지 않습니다.
@@ -296,5 +371,68 @@ internal static class Program
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         using (FileStream stream = File.Create(path)) encoder.Save(stream);
         Console.WriteLine("PREVIEW " + path);
+    }
+
+    private static int WebViewSmoke()
+    {
+        var app = new Application();
+        app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        int result = 1;
+        app.Dispatcher.BeginInvoke(new Action(async () =>
+        {
+            ReportBrowserWindow? window = null;
+            try
+            {
+                string profile = Path.Combine(AppContext.BaseDirectory, "test-data", "webview-" + Guid.NewGuid().ToString("N"));
+                var environment = await CoreWebView2Environment.CreateAsync(null, profile);
+                typeof(ReportBrowserWindow).GetField("SharedEnvironment", BindingFlags.NonPublic | BindingFlags.Static)!.SetValue(null, environment);
+                var document = new BusinessTripDocument { Title = "검증용 출장신청서", DocumentNumber = "TEST-40", DocumentStatus = "종결",
+                    DocContents = "<table><tr><td>2026년 9월 20일 원문</td></tr></table><script>window.testInjected=true;</script>" };
+                window = new ReportBrowserWindow(new AmaranthSession(), applicationDocument: document)
+                {
+                    Opacity = 0, ShowActivated = false, ShowInTaskbar = false
+                };
+                window.Show();
+                CoreWebView2 core = await window.InitializeCoreAsync();
+                var loaded = new TaskCompletionSource<bool>();
+                core.NavigationCompleted += (_, e) =>
+                {
+                    Console.WriteLine("NAVIGATION success=" + e.IsSuccess + " status=" + e.WebErrorStatus);
+                    if (e.IsSuccess) loaded.TrySetResult(true);
+                };
+                core.NavigateToString(ApplicationDocumentHtml.Create(document));
+                if (await Task.WhenAny(loaded.Task, Task.Delay(15000)) != loaded.Task) throw new TimeoutException("WebView2 원문 표시 시간 초과");
+                Assert(await loaded.Task, "원문 내비게이션이 성공해야 합니다.");
+                string rendered = await core.ExecuteScriptAsync("document.body.innerText.includes('2026년 9월 20일 원문') && !!document.querySelector('table') && window.testInjected !== true");
+                Assert(rendered == "true", "실제 WebView2가 원문 표를 표시하고 본문 스크립트를 실행하지 않아야 합니다.");
+                Assert(window.Title == "신청서 보기" && (core.Source == "about:blank" || core.Source.StartsWith("data:text/html", StringComparison.OrdinalIgnoreCase)), "ERP 작성 화면으로 이동하면 안 됩니다.");
+                Assert(typeof(ReportBrowserWindow).GetField("_fill", Private)!.GetValue(window) == null, "신청서 보기에 초안 입력 값이 없어야 합니다.");
+                var blocked = new TaskCompletionSource<bool>();
+                core.NavigationStarting += (_, e) =>
+                {
+                    if (e.Uri.StartsWith("https://erp.teia.co.kr/", StringComparison.Ordinal)) blocked.TrySetResult(e.Cancel);
+                };
+                core.Navigate("https://erp.teia.co.kr/");
+                if (await Task.WhenAny(blocked.Task, Task.Delay(5000)) != blocked.Task) throw new TimeoutException("이동 차단 검증 시간 초과");
+                Assert(await blocked.Task, "원문에서 ERP 화면 이동이 차단되어야 합니다.");
+                Console.WriteLine("PASS 실제 WebView2 신청서 원문·표 표시, 스크립트 및 작성 화면 이동 차단");
+                result = 0;
+            }
+            catch (Exception error)
+            {
+                Console.WriteLine("FAIL WebView2: " + error.GetBaseException().Message);
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    var browser = (Microsoft.Web.WebView2.Wpf.WebView2)typeof(ReportBrowserWindow).GetField("_browser", Private)!.GetValue(window)!;
+                    browser.Dispose();
+                }
+                window?.Close();
+                app.Shutdown(result);
+            }
+        }));
+        return app.Run();
     }
 }

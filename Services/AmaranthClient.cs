@@ -1219,7 +1219,9 @@ public sealed class AmaranthClient
                 continue;
             }
 
-            List<DateTime> rowDates = ExtractFlexibleDates(rowText);
+            Match timeMatch = Regex.Match(rowText, $@"({TimeValuePattern})\s*[~～\-]\s*({TimeValuePattern})");
+            // 사용예정일은 시각 뒤에 있으므로 근무일 후보에 포함하지 않습니다.
+            List<DateTime> rowDates = ExtractFlexibleDates(rowText.Substring(0, timeMatch.Index));
             if (rowDates.Count == 0)
             {
                 continue;
@@ -1240,7 +1242,6 @@ public sealed class AmaranthClient
                 substituteHolidayDateText = cellValues[compensationCellIndex + 1];
             }
 
-            Match timeMatch = Regex.Match(rowText, $@"({TimeValuePattern})\s*[~～\-]\s*({TimeValuePattern})");
             holidayWorks.Add(new HolidayWorkEntry
             {
                 WorkDate = rowDates[0].Date,
@@ -1285,21 +1286,26 @@ public sealed class AmaranthClient
         }
 
         const string datePattern =
-            @"\d{4}\s*(?:년\s*|[-./]\s*)" +
-            @"\d{1,2}\s*(?:월\s*|[-./]\s*)" +
-            @"\d{1,2}\s*일?|\b\d{8}\b";
+            @"(?<year>\d{4})\s*(?:년\s*|[-./]\s*)" +
+            @"(?<month>\d{1,2})\s*(?:월\s*|[-./]\s*)" +
+            @"(?<day>\d{1,2})\s*일?|\b(?<compact>\d{8})\b";
 
         foreach (Match match in Regex.Matches(text, datePattern))
         {
-            string digitsOnly = Regex.Replace(match.Value, @"\D", string.Empty);
-            if (digitsOnly.Length != 8)
+            if (match.Groups["compact"].Success)
             {
+                if (DateTime.TryParseExact(match.Groups["compact"].Value, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime compactDate))
+                {
+                    dates.Add(compactDate);
+                }
+
                 continue;
             }
 
-            if (DateTime.TryParseExact(digitsOnly, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
+            DateTime? date = TryCreateDate(match.Groups["year"].Value, match.Groups["month"].Value, match.Groups["day"].Value);
+            if (date.HasValue)
             {
-                dates.Add(date);
+                dates.Add(date.Value);
             }
         }
 
