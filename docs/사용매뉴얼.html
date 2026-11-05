@@ -22,7 +22,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
-      font-family: "Noto Sans KR", sans-serif;
+      font-family: "Noto Sans KR", "Malgun Gothic", sans-serif;
       color: var(--ink);
       background: var(--canvas);
       line-height: 1.45;
@@ -96,6 +96,7 @@
       padding: 22px 22px 18px;
       margin-bottom: 22px;
       break-inside: avoid;
+      scroll-margin-top: 84px;
     }
 
     .step h2 {
@@ -184,6 +185,27 @@
     .off { background: #eef4f1; color: #3d6b5c; }
     .on { background: var(--red-soft); color: var(--red); }
 
+    .note + .shot { margin-top: 18px; }
+    .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+    .feature { padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: #f3f6fa; }
+    .feature h3 { font-size: 15px; color: var(--navy); margin-bottom: 8px; }
+    .feature p, .note { font-size: 14px; line-height: 1.7; color: var(--muted); }
+    .feature .result { margin-top: 10px; font-weight: 700; color: var(--ink); }
+    .note { padding: 14px 16px; border-left: 3px solid #8da2bc; background: #eef2f7; border-radius: 0 10px 10px 0; }
+    .update-example { margin: 18px 0; padding: 24px; background: #e8edf3; border: 1px solid var(--line); border-radius: 14px; }
+    .example-dialog { max-width: 560px; margin: 0 auto; padding: 24px; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; }
+    .example-label { font-size: 12px; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+    .example-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .example-detail { font-size: 13px; color: var(--muted); }
+    .example-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px; flex-wrap: wrap; }
+    .example-check { font-size: 13px; font-weight: 700; color: var(--navy); background: #e8edf3; border-radius: 8px; padding: 10px 12px; }
+    .example-buttons { display: flex; gap: 8px; }
+    .example-button { padding: 10px 20px; font-size: 13px; font-weight: 700; background: #e8edf3; border-radius: 10px; color: var(--navy); }
+    .example-button.primary { background: var(--navy); color: #fff; }
+    figcaption { margin-top: 12px; text-align: center; font-size: 12px; color: var(--muted); }
+    .update-steps { margin: 16px 0 18px 22px; color: var(--ink); font-size: 14px; line-height: 1.7; }
+    .update-steps li { padding-left: 4px; margin-bottom: 8px; }
+
     footer {
       text-align: center;
       color: var(--muted);
@@ -192,7 +214,9 @@
     }
 
     @media (max-width: 720px) {
-      .grid-2, .rules { grid-template-columns: 1fr; }
+      .grid-2, .rules, .feature-grid { grid-template-columns: 1fr; }
+      .update-example { padding: 14px; }
+      .example-dialog { padding: 18px; }
       h1 { font-size: 26px; }
       .hint { display: none; }
     }
@@ -205,8 +229,7 @@
       .wrap { max-width: none; padding: 0; }
       .step { box-shadow: none; margin-bottom: 16px; }
       .shot { break-inside: avoid; }
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   </style>
 </head>
@@ -262,7 +285,19 @@
     <section class="step">
       <h2><span class="num">2</span> 미작성 목록</h2>
       <p class="one">카드를 누르면 기존에 작성한 신청서가 내장 웹뷰어에 표시됩니다.</p>
-      <p>카드의 <b>2시간 동안 알리지 않음</b>을 체크하면 해당 항목의 알림만 잠시 중지합니다. 체크한 카드는 목록에 계속 표시됩니다. 체크를 풀거나 체크한 시점부터 2시간이 지나면 다음 알림 주기에 다시 알려 줍니다. 새로고침이나 프로그램 재실행으로 남은 시간이 연장되지는 않습니다.</p>
+      <div class="feature-grid">
+        <article class="feature">
+          <h3>잠시 알림을 쉬고 싶을 때</h3>
+          <p><b>2시간 동안 알리지 않음</b>을 체크하세요. 카드는 목록에 남고, 해당 항목의 알림만 잠시 멈춥니다.</p>
+          <p class="result">체크 해제 또는 2시간 경과 → 다음 주기부터 다시 알림</p>
+        </article>
+        <article class="feature">
+          <h3>더 이상 표시하고 싶지 않을 때</h3>
+          <p>카드의 <b>삭제</b>를 누르세요. 해당 항목은 목록과 알림에서 영구 제외되며, 재시작해도 유지됩니다.</p>
+          <p class="result">앱의 목록에서만 제외 · ERP 문서는 그대로 유지</p>
+        </article>
+      </div>
+      <p class="note">2시간 알림 중지는 새로고침·재시작으로 연장되지 않습니다. 삭제는 해당 종류와 기간의 항목에 적용되며, 다른 날짜의 새 항목은 계속 표시됩니다.</p>
       <figure class="shot">
         <img src="images/02-dashboard.png" alt="미작성 목록" width="886" height="753" />
         <svg viewBox="0 0 886 753" preserveAspectRatio="none">
@@ -395,9 +430,43 @@
       </div>
     </section>
 
+    <section class="step" id="update-guide">
+      <h2><span class="num">7</span> 업데이트</h2>
+      <p class="one">창 아래의 새 버전 안내를 누르면 업데이트 확인 창이 열립니다.</p>
+      <figure class="update-example" aria-label="조용히 업데이트하기 옵션 위치 예시">
+        <div class="example-dialog">
+          <p class="example-label">업데이트</p>
+          <p class="example-title">새 버전을 설치할까요?</p>
+          <p class="example-detail">설치를 시작하면 프로그램이 종료됩니다.</p>
+          <div class="example-actions">
+            <span class="example-check">☑ 조용히 업데이트하기</span>
+            <div class="example-buttons" aria-hidden="true">
+              <span class="example-button">아니오</span>
+              <span class="example-button primary">예</span>
+            </div>
+          </div>
+        </div>
+        <figcaption>업데이트 확인 창 예시 · 왼쪽 체크박스로 설치 방식을 선택합니다.</figcaption>
+      </figure>
+      <div class="feature-grid">
+        <article class="feature">
+          <h3>체크하면 · 조용히 업데이트</h3>
+          <p>현재 설치된 폴더에 자동으로 업데이트합니다. 경로 선택과 설치 완료 화면을 거치지 않고, 완료되면 트레이로 다시 실행됩니다.</p>
+        </article>
+        <article class="feature">
+          <h3>체크하지 않으면 · 일반 설치</h3>
+          <p>기존 설치 화면이 열립니다. 설치 폴더를 선택하고 설치를 진행한 뒤, 완료 화면에서 실행 여부를 고릅니다.</p>
+        </article>
+      </div>
+      <ol class="update-steps">
+        <li><b>조용히 업데이트하기</b>를 체크하고 <b>예</b>를 누릅니다.</li>
+        <li>Windows 관리자 권한 확인 창이 나타나면 허용합니다.</li>
+        <li>업데이트가 끝나면 트레이 아이콘에서 창을 다시 열 수 있습니다.</li>
+      </ol>
+      <p class="note">체크박스는 1.8.0부터 표시됩니다. 조용한 업데이트 중에도 Windows 관리자 권한 확인은 필요하며, 설치에 실패하면 오류 안내가 표시됩니다.</p>
+    </section>
+
     <footer>아맛다보고서 · 사용 매뉴얼</footer>
   </main>
-<p>목록의 삭제 버튼을 누르면 해당 항목은 목록과 알림에서 영구 제외됩니다. 재시작해도 유지되며 ERP 문서는 삭제하지 않습니다. 다른 날짜의 새 항목은 계속 표시됩니다.</p>
-<p>업데이트 확인 팝업 왼쪽의 조용히 업데이트하기를 체크하면 현재 설치 경로에 자동 업데이트하고 트레이로 다시 실행합니다. 경로 선택과 설치 완료 화면은 생략되며 Windows 관리자 권한 확인은 필요합니다.</p>
 </body>
 </html>
