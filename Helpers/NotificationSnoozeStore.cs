@@ -16,6 +16,15 @@ public sealed class NotificationSnoozeStore
         _filePath = filePath;
         _utcNow = utcNow ?? (() => DateTimeOffset.UtcNow);
         Load();
+        if (DismissedPath is string path && File.Exists(path))
+        {
+            try
+            {
+                var saved = JsonSerializer.Deserialize<List<string>>(File.ReadAllText(path));
+                if (saved != null) _dismissed.UnionWith(saved);
+            }
+            catch { /* 손상된 파일로 앱 시작을 막지 않습니다. */ }
+        }
     }
 
     public static string DefaultFilePath => Path.Combine(
@@ -46,6 +55,26 @@ public sealed class NotificationSnoozeStore
         }
 
         Save();
+    }
+
+    // 영구 제외는 2시간 중지 파일과 분리해 이전 버전의 만료 정리에 영향받지 않습니다.
+    private string? DismissedPath => _filePath == null ? null : _filePath + ".dismissed.json";
+    private readonly HashSet<string> _dismissed = new(StringComparer.Ordinal);
+
+    public bool IsDismissed(string key) => _dismissed.Contains(key);
+
+    public void Dismiss(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("항목 식별자가 필요합니다.", nameof(key));
+        if (_dismissed.Contains(key)) return;
+        var updated = new HashSet<string>(_dismissed, StringComparer.Ordinal) { key };
+        if (DismissedPath is string path)
+        {
+            string? folder = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(folder)) Directory.CreateDirectory(folder);
+            File.WriteAllText(path, JsonSerializer.Serialize(updated));
+        }
+        _dismissed.Add(key);
     }
 
     private void RemoveExpired()

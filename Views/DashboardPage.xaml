@@ -34,7 +34,7 @@
                                    Text="지금은 비어 있습니다" />
                         <TextBlock Margin="0,6,0,0" FontSize="13"
                                    Foreground="{StaticResource MutedInkBrush}"
-                                   Text="출장·휴일근무 보고서와 대체휴가 요청서가 모두 맞습니다." />
+                                   Text="표시할 미작성 보고서와 대체휴가 요청서 항목이 없습니다." />
                     </StackPanel>
                 </Border>
 
@@ -89,8 +89,13 @@
                                                            Foreground="{StaticResource InProgressBrush}"
                                                            Text="{Binding StatusText}" TextWrapping="Wrap"
                                                            Visibility="{Binding StatusVisibility}" />
-                                                <CheckBox Style="{StaticResource NotificationSnoozeCheckBoxStyle}"
-                                                          Click="NotificationSnooze_Click" />
+                                                <StackPanel Orientation="Horizontal">
+                                                    <CheckBox Style="{StaticResource NotificationSnoozeCheckBoxStyle}"
+                                                              Click="NotificationSnooze_Click" />
+                                                    <Button Content="삭제" Margin="18,8,0,0" Padding="8,3"
+                                                            ToolTip="이 항목을 목록과 알림에서 영구 제외합니다. ERP 문서는 삭제하지 않습니다."
+                                                            Click="Dismiss_Click" />
+                                                </StackPanel>
                                             </StackPanel>
                                             <TextBlock Grid.Column="2"
                                                        VerticalAlignment="Center"
@@ -156,8 +161,13 @@
                                                            Foreground="{StaticResource InProgressBrush}"
                                                            Text="{Binding StatusText}" TextWrapping="Wrap"
                                                            Visibility="{Binding StatusVisibility}" />
-                                                <CheckBox Style="{StaticResource NotificationSnoozeCheckBoxStyle}"
-                                                          Click="NotificationSnooze_Click" />
+                                                <StackPanel Orientation="Horizontal">
+                                                    <CheckBox Style="{StaticResource NotificationSnoozeCheckBoxStyle}"
+                                                              Click="NotificationSnooze_Click" />
+                                                    <Button Content="삭제" Margin="18,8,0,0" Padding="8,3"
+                                                            ToolTip="이 항목을 목록과 알림에서 영구 제외합니다. ERP 문서는 삭제하지 않습니다."
+                                                            Click="Dismiss_Click" />
+                                                </StackPanel>
                                             </StackPanel>
                                             <TextBlock Grid.Column="2"
                                                        VerticalAlignment="Center"
@@ -219,8 +229,13 @@
                                                            Foreground="{StaticResource InProgressBrush}"
                                                            Text="{Binding StatusText}" TextWrapping="Wrap"
                                                            Visibility="{Binding StatusVisibility}" />
-                                                <CheckBox Style="{StaticResource NotificationSnoozeCheckBoxStyle}"
-                                                          Click="NotificationSnooze_Click" />
+                                                <StackPanel Orientation="Horizontal">
+                                                    <CheckBox Style="{StaticResource NotificationSnoozeCheckBoxStyle}"
+                                                              Click="NotificationSnooze_Click" />
+                                                    <Button Content="삭제" Margin="18,8,0,0" Padding="8,3"
+                                                            ToolTip="이 항목을 목록과 알림에서 영구 제외합니다. ERP 문서는 삭제하지 않습니다."
+                                                            Click="Dismiss_Click" />
+                                                </StackPanel>
                                             </StackPanel>
                                             <TextBlock Grid.Column="2"
                                                        VerticalAlignment="Center"

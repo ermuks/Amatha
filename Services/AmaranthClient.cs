@@ -1286,7 +1286,7 @@ public sealed class AmaranthClient
         }
 
         const string datePattern =
-            @"(?<year>\d{4})\s*(?:년\s*|[-./]\s*)" +
+            @"(?<!\d)(?<year>\d{4})(?:\s*년\s*|\s*[-./]\s*|\s+(?=\d{1,2}\s*월))" +
             @"(?<month>\d{1,2})\s*(?:월\s*|[-./]\s*)" +
             @"(?<day>\d{1,2})\s*일?|\b(?<compact>\d{8})\b";
 

@@ -37,6 +37,8 @@ internal static class Program
         Run("알림 집계·해제·만료 후 다음 사이클", NotificationCycles);
         Run("체크박스 클릭은 보고서 창을 열지 않음", CheckBoxRouting);
         Run("한 자리 월·일과 유효하지 않은 날짜", FlexibleDateParsing);
+        Run("년 없는 보고서 기간과 누락 판정", MissingYearMarker);
+        Run("영구 삭제 저장·재시작·사용자 분리", PermanentDismissal);
         Run("대체휴가 사용예정일을 근무일로 인식하지 않음", SubstituteDateRegression);
         Run("휴가 사용 문서는 보고서·요청서 대상으로 분류하지 않음", LeaveUsageClassification);
         Run("카드가 기존 신청서 원문을 보관함", ApplicationDocumentLink);
@@ -279,13 +281,53 @@ internal static class Program
 
     private static void FlexibleDateParsing()
     {
-        foreach (string text in new[] { "2026년 9월 20일", "2026 년 09 월 20 일", "2026-9-20", "2026/09/20", "2026.9.20", "20260920" })
+        foreach (string text in new[] { "2026 9월 20일", "2026년 9월 20일", "2026 년 09 월 20 일", "2026-9-20", "2026/09/20", "2026.9.20", "20260920" })
         {
             var dates = Parse<List<DateTime>>("ExtractFlexibleDates", text);
             Assert(dates.Count == 1 && dates[0] == new DateTime(2026, 9, 20), "날짜를 정확히 읽어야 합니다: " + text);
         }
         Assert(Parse<List<DateTime>>("ExtractFlexibleDates", "2026년 2월 30일 / 2026-13-1").Count == 0, "유효하지 않은 날짜는 제외해야 합니다.");
         Assert(Parse<List<DateTime>>("ExtractFlexibleDates", "2024년 2월 29일").Single() == new DateTime(2024, 2, 29), "윤년 날짜를 읽어야 합니다.");
+    }
+
+    private static void MissingYearMarker()
+    {
+        foreach (string text in new[] {
+            "출장기간 2026 10월 26일 부터 2026년 10월 29일 까지 출장일수 4일",
+            "출장기간 2026 10월 26일 부터 2026 10월 29일 까지 목적지 테스트" })
+        {
+            var period = Parse<(DateTime?, DateTime?)>("ParseTripPeriodFromReport", text);
+            Assert(period.Item1 == new DateTime(2026, 10, 26) && period.Item2 == new DateTime(2026, 10, 29), "첨부 화면의 기간을 읽어야 합니다.");
+            var client = new AmaranthClient();
+            for (int day = 26; day <= 29; day++) client.Schedules.Add(new WorkSchedule { Date = new DateTime(2026, 10, day), Name = "국내출장", FormName = "출장신청서" });
+            Assert(client.GetMissingTripReportPeriods().Count > 0, "보고서 추가 전 누락이 있어야 합니다.");
+            client.BusinessTripReports.Add(new BusinessTripReport { TripStartDate = period.Item1, TripEndDate = period.Item2 });
+            Assert(client.GetMissingTripReportPeriods().Count == 0, "보고서가 출장 4일 전체를 충족해야 합니다.");
+        }
+        Assert(Parse<List<DateTime>>("ExtractFlexibleDates", "문서번호 12026 10월 26일").Count == 0, "긴 숫자의 일부를 연도로 인식하면 안 됩니다.");
+    }
+
+    private static void PermanentDismissal()
+    {
+        string path = TestPath();
+        var store = new NotificationSnoozeStore(path, () => Start);
+        var dashboard = Dashboard(FixtureClient(), store);
+        var items = dashboard.MissingTrips.Concat(dashboard.MissingHolidayWorks).Concat(dashboard.SubstituteHolidayIssues).ToArray();
+        foreach (var item in items) dashboard.DismissItem(item);
+        Assert(dashboard.IsAllClear && items.All(item => !item.CanNotify && item.IsDismissed), "삭제 즉시 모든 목록·알림·집계에 반영해야 합니다.");
+        Apply(dashboard);
+        Assert(dashboard.IsAllClear, "다음 조회에서도 숨겨야 합니다.");
+        var restored = new NotificationSnoozeStore(path, () => Start.AddYears(1));
+        Assert(Dashboard(FixtureClient(), restored).IsAllClear, "재시작 및 2시간 경과 후에도 숨겨야 합니다.");
+        Assert(!Dashboard(FixtureClient(), restored, "another-user").IsAllClear, "다른 사용자의 항목은 숨기면 안 됩니다.");
+        var nextClient = FixtureClient();
+        nextClient.Schedules.Add(new WorkSchedule { Date = DateTime.Today.AddDays(-10), Name = "국내출장", FormName = "출장신청서" });
+        Assert(Dashboard(nextClient, restored).MissingTrips.Count == 1, "새 날짜의 항목은 계속 보여야 합니다.");
+        File.WriteAllText(path, "block directory creation");
+        var failureStore = new NotificationSnoozeStore(Path.Combine(path, "invalid.json"));
+        bool threw = false;
+        try { failureStore.Dismiss("test"); } catch { threw = true; }
+        Assert(threw && !failureStore.IsDismissed("test"), "영구 저장 실패를 성공으로 처리하면 안 됩니다.");
     }
 
     private static void SubstituteDateRegression()
@@ -363,6 +405,15 @@ internal static class Program
             Assert(((MissingPeriodViewModel)checkBox.DataContext).IsNotificationSnoozed, "실제 XAML 바인딩이 체크를 저장해야 합니다.");
             checkBox.SetCurrentValue(ToggleButton.IsCheckedProperty, false);
         }
+        var deleteButtons = Descendants<Button>(page).Where(button => Equals(button.Content, "삭제")).ToArray();
+        Assert(deleteButtons.Length == 3, "각 목록 카드에 삭제 버튼이 있어야 합니다.");
+        foreach (var button in deleteButtons)
+        {
+            var item = (MissingPeriodViewModel)button.DataContext;
+            button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
+            Assert(item.IsDismissed, "실제 삭제 버튼으로 영구 제외해야 합니다.");
+        }
+        Assert(dashboard.IsAllClear, "삭제 후 화면 집계를 갱신해야 합니다.");
         var bitmap = new RenderTargetBitmap(886, 753, 96, 96, PixelFormats.Pbgra32);
         bitmap.Render(page);
         var encoder = new PngBitmapEncoder();

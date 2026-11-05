@@ -23,6 +23,21 @@ public partial class DashboardPage : Page
         e.Handled = true;
     }
 
+    private void Dismiss_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if ((sender as FrameworkElement)?.DataContext is not MissingPeriodViewModel item) return;
+        try
+        {
+            if (DataContext is DashboardViewModel dashboard) dashboard.DismissItem(item);
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(Window.GetWindow(this), "삭제 상태를 저장하지 못했습니다. " + exception.Message,
+                "목록에서 삭제", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
     private void Period_Click(object sender, RoutedEventArgs e)
     {
         Window? owner = Window.GetWindow(this);

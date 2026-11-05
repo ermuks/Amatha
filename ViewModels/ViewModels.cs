@@ -340,19 +340,37 @@ public sealed class DashboardViewModel : ObservableObject
 
         foreach (MissingReportPeriod period in _client.GetMissingTripReportPeriods())
         {
-            MissingTrips.Add(CreateItem(period));
+            var item = CreateItem(period);
+            if (!item.IsDismissed) MissingTrips.Add(item);
         }
 
         foreach (MissingReportPeriod period in _client.GetMissingHolidayWorkReportPeriods())
         {
-            MissingHolidayWorks.Add(CreateItem(period));
+            var item = CreateItem(period);
+            if (!item.IsDismissed) MissingHolidayWorks.Add(item);
         }
 
         foreach (SubstituteHolidayIssue issue in _client.GetSubstituteHolidayIssues())
         {
-            SubstituteHolidayIssues.Add(CreateSubstituteItem(issue));
+            var item = CreateSubstituteItem(issue);
+            if (!item.IsDismissed) SubstituteHolidayIssues.Add(item);
         }
 
+        UpdateCounts();
+    }
+
+    public void DismissItem(MissingPeriodViewModel item)
+    {
+        if (!MissingTrips.Contains(item) && !MissingHolidayWorks.Contains(item) && !SubstituteHolidayIssues.Contains(item)) return;
+        item.Dismiss();
+        MissingTrips.Remove(item);
+        MissingHolidayWorks.Remove(item);
+        SubstituteHolidayIssues.Remove(item);
+        UpdateCounts();
+    }
+
+    private void UpdateCounts()
+    {
         MissingTripCount = MissingTrips.Count;
         MissingHolidayCount = MissingHolidayWorks.Count;
         SubstituteIssueCount = SubstituteHolidayIssues.Count;
@@ -593,7 +611,16 @@ public sealed class MissingPeriodViewModel : ObservableObject
         }
     }
 
-    public bool CanNotify => ShouldNotify && !IsNotificationSnoozed;
+    public bool IsDismissed => _notificationSnoozes.IsDismissed(_notificationKey);
+
+    public void Dismiss()
+    {
+        _notificationSnoozes.Dismiss(_notificationKey);
+        OnPropertyChanged(nameof(IsDismissed));
+        OnPropertyChanged(nameof(CanNotify));
+    }
+
+    public bool CanNotify => ShouldNotify && !IsNotificationSnoozed && !IsDismissed;
 
     public string Name { get; init; } = string.Empty;
     public string PeriodText { get; init; } = string.Empty;
