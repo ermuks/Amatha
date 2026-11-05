@@ -17,14 +17,28 @@ public partial class App : Application
 
     public static bool StartedFromWindowsStartup { get; private set; }
 
+    public static bool StartedInTray { get; private set; }
+    private static bool _suppressInitialNotificationActivation;
+
+    internal static bool ConsumeInitialNotificationSuppression()
+    {
+        bool suppress = _suppressInitialNotificationActivation;
+        _suppressInitialNotificationActivation = false;
+        return suppress;
+    }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         StartedFromWindowsStartup = e.Args.Any(arg =>
             string.Equals(arg, "--autostart", StringComparison.OrdinalIgnoreCase));
 
+        StartedInTray = e.Args.Any(arg => string.Equals(arg, "--tray", StringComparison.OrdinalIgnoreCase));
+
+        _suppressInitialNotificationActivation = StartedInTray;
+
         if (!TryTakeSingleInstance())
         {
-            if (!StartedFromWindowsStartup)
+            if (!StartedFromWindowsStartup && !StartedInTray)
             {
                 TryActivateExisting();
             }

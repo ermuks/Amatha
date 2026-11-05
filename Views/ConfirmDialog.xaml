@@ -51,8 +51,8 @@
         </Style>
     </UserControl.Resources>
 
-    <Border Width="420"
-            MaxWidth="440"
+    <Border x:Name="DialogCard" Width="420"
+            MaxWidth="600"
             Padding="28,26,28,22"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
@@ -87,19 +87,27 @@
                        Foreground="#6D7A8C"
                        TextWrapping="Wrap"
                        Visibility="Collapsed" />
-            <StackPanel Margin="0,28,0,0"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Right">
-                <Button Style="{StaticResource DialogQuietStyle}"
-                        Content="아니오"
-                        IsCancel="True"
-                        Click="No_Click" />
-                <Button Margin="10,0,0,0"
-                        Style="{StaticResource DialogPrimaryStyle}"
-                        Content="예"
-                        IsDefault="True"
-                        Click="Yes_Click" />
-            </StackPanel>
+            <Grid Margin="0,28,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <CheckBox x:Name="SilentUpdateCheckBox" Content="조용히 업데이트하기"
+                          VerticalAlignment="Center" HorizontalAlignment="Left"
+                          Margin="0,0,16,0" Visibility="Collapsed"
+                          ToolTip="현재 설치 경로에 업데이트하고 트레이로 다시 실행합니다." />
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Style="{StaticResource DialogQuietStyle}"
+                            Content="아니오"
+                            IsCancel="True"
+                            Click="No_Click" />
+                    <Button Margin="10,0,0,0"
+                            Style="{StaticResource DialogPrimaryStyle}"
+                            Content="예"
+                            IsDefault="True"
+                            Click="Yes_Click" />
+                </StackPanel>
+            </Grid>
         </StackPanel>
     </Border>
 </UserControl>

@@ -27,6 +27,13 @@ internal static class Program
     private static int Main(string[] args)
     {
         if (args.Contains("--webview-smoke")) return WebViewSmoke();
+        if (args.Contains("--installer-smoke"))
+        {
+            Run("실제 설치기 압축 해제·업데이트 덮어쓰기·트레이 인자", InstallerSmoke);
+            return _failed == 0 ? 0 : 1;
+        }
+        Run("조용한 업데이트의 경로·인자 검증", SilentUpdateArguments);
+        Run("트레이 재시작 첫 조회는 GUI 알림 억제", TrayStartupNotification);
         Run("2시간 직전과 정확한 만료 시점", ExpiryBoundary);
         Run("해제와 재체크의 만료 시간", UncheckAndRecheck);
         Run("재실행 후 남은 시간 유지와 해제 저장", Persistence);
@@ -44,6 +51,8 @@ internal static class Program
         Run("카드가 기존 신청서 원문을 보관함", ApplicationDocumentLink);
         Run("신청서 HTML과 텍스트 원문 표시", ApplicationHtml);
         Run("실제 대시보드 XAML 체크박스와 화면 렌더링", DashboardLayout);
+        Run("업데이트 팝업 좌측 체크박스와 취소·초기화", UpdateDialog);
+        Run("명시적 트레이 시작의 WPF 창 숨김", TrayWindow);
         Console.WriteLine($"RESULT: {_passed} passed, {_failed} failed");
         return _failed == 0 ? 0 : 1;
     }
@@ -422,6 +431,122 @@ internal static class Program
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         using (FileStream stream = File.Create(path)) encoder.Save(stream);
         Console.WriteLine("PREVIEW " + path);
+    }
+
+    private static void TrayWindow()
+    {
+        var mode = typeof(App).GetProperty(nameof(App.StartedInTray))!;
+        var previousBalloon = WindowsNotification.TrayBalloon;
+        MainWindow? window = null;
+        try
+        {
+            mode.SetValue(null, true);
+            window = new MainWindow(); // Show/Loaded를 실행하지 않아 로그인하지 않습니다.
+            Assert(!window.ShowInTaskbar && !window.ShowActivated && window.Opacity == 0, "--tray는 표시 설정과 관계없이 시작 화면을 숨겨야 합니다.");
+            typeof(MainWindow).GetMethod("HideToTrayAfterFirstRender", Private)!.Invoke(window, new object?[] { null, EventArgs.Empty });
+            Assert(window.Visibility == Visibility.Hidden && !window.ShowInTaskbar && window.Opacity == 1, "첫 렌더링 후 창을 숨기고 이후 복원할 수 있어야 합니다.");
+        }
+        finally
+        {
+            mode.SetValue(null, false);
+            if (window != null)
+            {
+                ((DispatcherTimer)typeof(MainWindow).GetField("_updateTimer", Private)!.GetValue(window)!).Stop();
+                typeof(MainWindow).GetField("_forceClose", Private)!.SetValue(window, true);
+                window.Close();
+            }
+            WindowsNotification.TrayBalloon = previousBalloon;
+        }
+    }
+
+    private static void TrayStartupNotification()
+    {
+        var flags = BindingFlags.Static | BindingFlags.NonPublic;
+        var suppression = typeof(App).GetField("_suppressInitialNotificationActivation", flags)!;
+        var consume = typeof(App).GetMethod("ConsumeInitialNotificationSuppression", flags)!;
+        suppression.SetValue(null, true);
+        Assert((bool)consume.Invoke(null, null)!, "트레이 재시작 직후 GUI를 다시 열면 안 됩니다.");
+        Assert(!(bool)consume.Invoke(null, null)!, "두 번째 알림부터는 사용자의 GUI 알림 설정을 따라야 합니다.");
+    }
+
+    private static void SilentUpdateArguments()
+    {
+        string folder = Path.Combine(Path.GetDirectoryName(TestPath())!, "한글 설치 폴더");
+        Directory.CreateDirectory(folder);
+        string exe = Path.Combine(folder, SilentUpdateOptions.ExeName);
+        File.WriteAllText(exe, "test placeholder");
+        var start = UpdateChecker.CreateInstallerStartInfo("installer.exe", true, exe);
+        Assert(start.Arguments == "--silent \"" + exe + "\"", "공백·한글 경로 전체를 하나의 인자로 전달해야 합니다.");
+        Assert(start.Verb == "runas" && start.UseShellExecute, "기존 관리자 실행 방식을 유지해야 합니다.");
+        Assert(SilentUpdateOptions.Parse(new[] { "--silent", exe }) == exe, "전달한 실행 파일 경로를 설치기가 그대로 받아야 합니다.");
+        Assert(SilentUpdateOptions.Parse(Array.Empty<string>()) == null, "일반 설치는 인자 없이 동작해야 합니다.");
+        Assert(UpdateChecker.CreateInstallerStartInfo("installer.exe", false, exe).Arguments.Length == 0, "미체크 시 일반 설치여야 합니다.");
+        foreach (string[] invalid in new[] { new[] { "--silent" }, new[] { "--silent", "relative.exe" }, new[] { "--unknown", exe }, new[] { "--silent", folder }, new[] { "--silent", exe, "extra" }, new[] { "--silent", Path.Combine(folder, "missing", SilentUpdateOptions.ExeName) } })
+        {
+            bool rejected = false;
+            try { SilentUpdateOptions.Parse(invalid); } catch (Exception error) when (error is ArgumentException or FileNotFoundException) { rejected = true; }
+            Assert(rejected, "잘못된 인자를 기본 설치 경로로 대체하면 안 됩니다.");
+        }
+    }
+
+    private static void UpdateDialog()
+    {
+        var dialog = new ConfirmDialog();
+        bool? confirmed = null;
+        dialog.Prepare("업데이트", "설치할까요?", result => confirmed = result, showSilentUpdate: true);
+        dialog.Measure(new Size(900, 500));
+        dialog.Arrange(new Rect(0, 0, 900, 500));
+        dialog.UpdateLayout();
+        var checkbox = Descendants<CheckBox>(dialog).Single();
+        var yes = Descendants<Button>(dialog).Single(button => Equals(button.Content, "예"));
+        Assert(checkbox.Visibility == Visibility.Visible && !dialog.SilentUpdateSelected, "업데이트에서만 기본 미체크로 보여야 합니다.");
+        Point left = checkbox.TranslatePoint(new Point(), dialog);
+        Assert(left.X + checkbox.ActualWidth <= yes.TranslatePoint(new Point(), dialog).X, "체크박스는 버튼 좌측에 겹치지 않게 배치해야 합니다.");
+        checkbox.IsChecked = true;
+        yes.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, yes));
+        Assert(confirmed == true && dialog.SilentUpdateSelected, "확인 시 체크한 선택을 보존해야 합니다.");
+        var bitmap = new RenderTargetBitmap(900, 500, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(dialog);
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using (var file = File.Create(Path.Combine(AppContext.BaseDirectory, "test-data", "update-dialog.png"))) encoder.Save(file);
+        dialog.Prepare("종료", "종료할까요?", result => confirmed = result);
+        Assert(checkbox.Visibility == Visibility.Collapsed && !dialog.SilentUpdateSelected, "일반 팝업은 체크박스를 숨기고 선택을 초기화해야 합니다.");
+        dialog.Complete(false);
+        Assert(confirmed == false, "취소를 확인으로 처리하면 안 됩니다.");
+    }
+
+    private static void InstallerSmoke()
+    {
+        string repo = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+        var installer = Assembly.LoadFrom(Path.Combine(repo, "dist", "아맛다보고서Install.exe"));
+        var installation = installer.GetType("Amaranth10Installer.Installation")!;
+        string folder = Path.Combine(Path.GetDirectoryName(TestPath())!, "한글 업데이트 폴더");
+        Directory.CreateDirectory(folder);
+        string exe = Path.Combine(folder, SilentUpdateOptions.ExeName);
+        File.WriteAllText(exe, "old version");
+        int progress = 0;
+        installation.GetMethod("InstallTo")!.Invoke(null, new object[] { folder, new Action<int>(value => progress = value) });
+        Assert(progress == 100 && File.Exists(Path.Combine(folder, "ReadMe.html")), "실제 내장 패키지를 지정한 폴더에 설치해야 합니다.");
+        byte[] built = File.ReadAllBytes(Path.Combine(repo, "bin", "Release", "net48", SilentUpdateOptions.ExeName));
+        Assert(File.ReadAllBytes(exe).SequenceEqual(built), "설치기 패키지는 이번에 빌드한 앱과 완전히 같아야 합니다.");
+        Assert(System.Diagnostics.FileVersionInfo.GetVersionInfo(exe).FileVersion == typeof(App).Assembly.GetName().Version!.ToString(), "새 버전으로 덮어써야 합니다.");
+        string linkPath = (string)installation.GetMethod("CreateTrayShortcut")!.Invoke(null, new object[] { exe })!;
+        object? shell = null;
+        object? shortcut = null;
+        try
+        {
+            shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")!);
+            shortcut = shell.GetType().InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null, shell, new object[] { linkPath });
+            string target = (string)shortcut!.GetType().InvokeMember("TargetPath", BindingFlags.GetProperty, null, shortcut, null)!;
+            string arguments = (string)shortcut.GetType().InvokeMember("Arguments", BindingFlags.GetProperty, null, shortcut, null)!;
+            Assert(string.Equals(target, exe, StringComparison.OrdinalIgnoreCase) && arguments == "--tray", "재실행 바로가기는 업데이트한 앱과 --tray를 전달해야 합니다.");
+        }
+        finally
+        {
+            if (shortcut != null) System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shortcut);
+            if (shell != null) System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell);
+        }
     }
 
     private static int WebViewSmoke()

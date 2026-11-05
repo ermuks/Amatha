@@ -114,14 +114,21 @@ public static class UpdateChecker
         throw lastError ?? new InvalidOperationException("설치 파일을 받지 못했습니다.");
     }
 
-    public static void LaunchInstaller(string installerPath)
+    public static ProcessStartInfo CreateInstallerStartInfo(string installerPath, bool silent, string executablePath)
     {
-        Process.Start(new ProcessStartInfo
+        return new ProcessStartInfo
         {
             FileName = installerPath,
+            Arguments = silent ? Helpers.SilentUpdateOptions.CreateArguments(executablePath) : string.Empty,
             UseShellExecute = true,
             Verb = "runas"
-        });
+        };
+    }
+
+    public static void LaunchInstaller(string installerPath, bool silent, string executablePath)
+    {
+        if (Process.Start(CreateInstallerStartInfo(installerPath, silent, executablePath)) == null)
+            throw new InvalidOperationException("설치기를 시작하지 못했습니다.");
     }
 
     private static async Task<Version?> TryReadPublishedVersionAsync(CancellationToken cancellationToken)

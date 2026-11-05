@@ -318,6 +318,7 @@ public sealed class DashboardViewModel : ObservableObject
 
     private void NotifyIfNeeded()
     {
+        bool suppressActivation = App.ConsumeInitialNotificationSuppression();
         AppSettings settings = AppRuntime.Current.Settings;
         if (!settings.NotificationsEnabled)
         {
@@ -329,7 +330,7 @@ public sealed class DashboardViewModel : ObservableObject
             MissingHolidayWorks.Count(item => item.CanNotify),
             SubstituteHolidayIssues.Count(item => item.CanNotify && !item.IsTimeMismatch),
             SubstituteHolidayIssues.Count(item => item.CanNotify && item.IsTimeMismatch),
-            settings.ShowGuiOnNotification);
+            settings.ShowGuiOnNotification && !suppressActivation);
     }
 
     private void ApplyMissingPeriods()

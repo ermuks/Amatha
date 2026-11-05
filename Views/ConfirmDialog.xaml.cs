@@ -23,8 +23,13 @@ public partial class ConfirmDialog : UserControl
         return AskFallback(owner, title, message, detail);
     }
 
-    public void Prepare(string title, string message, Action<bool> completed, string? detail = null)
+    public bool SilentUpdateSelected => SilentUpdateCheckBox.IsChecked == true;
+
+    public void Prepare(string title, string message, Action<bool> completed, string? detail = null, bool showSilentUpdate = false)
     {
+        DialogCard.Width = showSilentUpdate ? 560 : 420;
+        SilentUpdateCheckBox.Visibility = showSilentUpdate ? Visibility.Visible : Visibility.Collapsed;
+        SilentUpdateCheckBox.IsChecked = false;
         TitleText.Text = title;
         MessageText.Text = message;
         bool hasDetail = !string.IsNullOrWhiteSpace(detail);

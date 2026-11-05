@@ -44,7 +44,7 @@ public partial class MainWindow : Window
         _updateTimer.Tick += async (_, _) => await CheckForUpdateAsync();
         _updateTimer.Start();
         _ = CheckForUpdateAsync();
-        if (AppRuntime.Current.Settings.StartInTray && App.StartedFromWindowsStartup)
+        if (App.StartedInTray || (AppRuntime.Current.Settings.StartInTray && App.StartedFromWindowsStartup))
         {
             ShowInTaskbar = false;
             ShowActivated = false;
@@ -159,11 +159,12 @@ public partial class MainWindow : Window
         if (!ShowConfirm(
                 "업데이트",
                 "아맛다보고서 v" + update.LatestLabel + "를 설치할까요?",
-                FormatUpdateDetail(update)))
+                FormatUpdateDetail(update), showSilentUpdate: true))
         {
             return;
         }
 
+        bool silent = ConfirmDialogHost.SilentUpdateSelected;
         _updateBusy = true;
         UpdateLink.Text = "업데이트 받는 중...";
         UpdateLink.TextDecorations = null;
@@ -172,7 +173,8 @@ public partial class MainWindow : Window
         try
         {
             string installerPath = await UpdateChecker.DownloadInstallerAsync(update);
-            UpdateChecker.LaunchInstaller(installerPath);
+            string executablePath = System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
+            UpdateChecker.LaunchInstaller(installerPath, silent, executablePath);
             _forceClose = true;
             Application.Current.Shutdown();
         }
@@ -264,6 +266,8 @@ public partial class MainWindow : Window
 
     public void ShowFromTray()
     {
+        _hideToTrayAfterRender = false;
+        App.ConsumeInitialNotificationSuppression();
         Opacity = 1;
         ShowInTaskbar = true;
         Visibility = Visibility.Visible;
@@ -349,7 +353,7 @@ public partial class MainWindow : Window
         Close();
     }
 
-    internal bool ShowConfirm(string title, string message, string? detail = null)
+    internal bool ShowConfirm(string title, string message, string? detail = null, bool showSilentUpdate = false)
     {
         bool confirmed = false;
         DispatcherFrame frame = new();
@@ -358,7 +362,7 @@ public partial class MainWindow : Window
             confirmed = result;
             ConfirmOverlay.Visibility = Visibility.Collapsed;
             frame.Continue = false;
-        }, detail);
+        }, detail, showSilentUpdate);
         ConfirmOverlay.Visibility = Visibility.Visible;
         ConfirmOverlay.Focus();
         ConfirmDialogHost.Focus();

@@ -19,12 +19,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\AppVersion.cs" Link="AppVersion.cs" />
+    <Compile Include="..\Helpers\SilentUpdateOptions.cs" Link="SilentUpdateOptions.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,7 +45,7 @@
     <Using Remove="System.Drawing" />
   </ItemGroup>
 
-  <Target Name="PreparePayload" AfterTargets="ResolveProjectReferences" BeforeTargets="BeforeBuild;CoreCompile">
+  <Target Name="PreparePayload" AfterTargets="ResolveProjectReferences" BeforeTargets="CoreCompile">
     <PropertyGroup>
       <_AppOut>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\bin\$(Configuration)\net48\'))</_AppOut>
       <_Stage>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)payload\'))</_Stage>
