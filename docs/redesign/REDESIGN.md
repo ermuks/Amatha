@@ -258,6 +258,7 @@
   - 미작성 목록(`DashboardPage`)은 알림·새로고침을 맡으므로 로그인 때 예전처럼 뒤에서 만들고, 화면만 홈을 먼저 보여 줌(`NavigateToDashboard` → `ShowHome`).
 - **사이드바**: 맨 위 로고(캐릭터 타일 + "아맛다보고서")를 **홈** 메뉴로 바꿈. 배경에 캐릭터 전신(`Assets/SidebarCharacter.png`, 선만 있는 투명 PNG, 728px)을 **불투명도 0.06**으로 356px 크기로 깔고 왼쪽 아래(`Canvas.Left=4`, `Canvas.Bottom=-72`)에 둬 발끝은 창 아래로 잘림. 사이드바 `ClipToBounds`, 클릭은 통과(`IsHitTestVisible=False`).
 - 로그인 카드의 로고 타일(`Assets/Logo.png`)은 그대로.
+- (1.17.1) 사이드 메뉴(`NavTemplate`)의 hover·누름 배경을 불투명 `#E8E7E2`·`#E1E0DA` 대신 반투명 검정 `#0A1C1B19`·`#111C1B19`로 바꿔 배경 캐릭터가 가려지지 않게 함(바탕 위에서 같은 색). 선택된 메뉴의 흰 알약도 70% 흰색(`#B3FFFFFF`).
 - 매뉴얼: "2 홈" 장 추가(그림 `02-home`), 뒤 장 번호를 하나씩 밀어 9장.
 
 ### 4.6 그 밖

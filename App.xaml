@@ -100,7 +100,8 @@
         <!-- Tag 에 아이콘 Geometry 를 넣는다. RadioButton(이동)과 Button(동작) 모두 사용 -->
         <ControlTemplate x:Key="NavTemplate" TargetType="ButtonBase">
             <Grid>
-                <Border x:Name="Shadow" CornerRadius="10" Background="#FFFFFF" Opacity="0">
+                <!-- 선택된 메뉴의 흰 알약. 사이드바 배경 캐릭터가 비치도록 반투명(70%) -->
+                <Border x:Name="Shadow" CornerRadius="10" Background="#B3FFFFFF" Opacity="0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="3" ShadowDepth="1" Direction="270" Opacity="0.10" Color="#1C1B19" />
                     </Border.Effect>
@@ -122,14 +123,15 @@
                 </Border>
             </Grid>
             <ControlTemplate.Triggers>
+                <!-- hover/누름은 불투명 색 대신 반투명 검정: 사이드바 바탕(#F1F0EC) 위에서 #E8E7E2/#E1E0DA와 같은 색이 되면서 배경 캐릭터가 가려지지 않음 -->
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter TargetName="Bd" Property="Background" Value="#E8E7E2" />
+                    <Setter TargetName="Bd" Property="Background" Value="#0A1C1B19" />
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter TargetName="Bd" Property="Background" Value="#E1E0DA" />
+                    <Setter TargetName="Bd" Property="Background" Value="#111C1B19" />
                 </Trigger>
                 <Trigger Property="ToggleButton.IsChecked" Value="True">
-                    <Setter TargetName="Bd" Property="Background" Value="#FFFFFF" />
+                    <Setter TargetName="Bd" Property="Background" Value="Transparent" />
                     <Setter TargetName="Shadow" Property="Opacity" Value="1" />
                     <Setter TargetName="Icon" Property="Stroke" Value="#5847C9" />
                     <Setter Property="Foreground" Value="#1C1B19" />
