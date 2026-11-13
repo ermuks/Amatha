@@ -26,12 +26,14 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        if (args.Contains("--mail-body-smoke")) return MailBodyTests.Smoke();
         if (args.Contains("--webview-smoke")) return WebViewSmoke();
         if (args.Contains("--installer-smoke"))
         {
             Run("실제 설치기 압축 해제·업데이트 덮어쓰기·트레이 인자", InstallerSmoke);
             return _failed == 0 ? 0 : 1;
         }
+        Run("메일 상세 조회·헤더·본문·오류·취소", MailBodyTests.Verify);
         Run("받은메일 응답·서명·페이지·취소", MailTests.Verify);
         Run("조용한 업데이트의 경로·인자 검증", SilentUpdateArguments);
         Run("트레이 재시작 첫 조회는 GUI 알림 억제", TrayStartupNotification);

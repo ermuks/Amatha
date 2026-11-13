@@ -22,3 +22,15 @@ public sealed class InboxMailPage
     public List<InboxMail> Items { get; init; } = new();
     public bool HasNext => (long)Page * PageSize < TotalCount;
 }
+
+public sealed class MailBody
+{
+    public long Id { get; init; }
+    public string Subject { get; init; } = string.Empty;
+    public string From { get; init; } = string.Empty;
+    public string To { get; init; } = string.Empty;
+    public string Date { get; init; } = string.Empty;
+    public string Html { get; init; } = string.Empty;
+    public string Plain { get; init; } = string.Empty;
+    public int AttachmentCount { get; init; }
+}

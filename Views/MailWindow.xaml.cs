@@ -1,5 +1,7 @@
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using Amaranth10API.Models;
 using Amaranth10API.Services;
 
@@ -11,6 +13,7 @@ public partial class MailWindow : Window
     private readonly AmaranthSession _session;
     private readonly CancellationTokenSource _lifetime = new();
     private InboxMailPage? _page;
+    private readonly Dictionary<long, MailBodyWindow> _bodyWindows = new();
     private bool _busy;
     private bool _closed;
 
@@ -20,7 +23,28 @@ public partial class MailWindow : Window
         _session = session;
         InitializeComponent();
         Loaded += FirstLoad;
-        Closed += (_, _) => { _closed = true; _lifetime.Cancel(); _lifetime.Dispose(); MailGrid.ItemsSource = null; };
+        Closed += (_, _) => { _closed = true; foreach (var window in _bodyWindows.Values.ToArray()) window.Close(); _lifetime.Cancel(); _lifetime.Dispose(); MailGrid.ItemsSource = null; };
+    }
+
+    private void MailGrid_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is DependencyObject source && ItemsControl.ContainerFromElement(MailGrid, source) is DataGridRow row && row.Item is InboxMail mail)
+            OpenMail(mail);
+    }
+
+    private void MailGrid_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && MailGrid.SelectedItem is InboxMail mail) { e.Handled = true; OpenMail(mail); }
+    }
+
+    private void OpenMail(InboxMail mail)
+    {
+        if (_closed || _busy) return;
+        if (_bodyWindows.TryGetValue(mail.Id, out var existing)) { existing.WindowState = WindowState.Normal; existing.Activate(); return; }
+        var window = new MailBodyWindow(_client, _session, mail) { Owner = this };
+        _bodyWindows.Add(mail.Id, window);
+        window.Closed += (_, _) => _bodyWindows.Remove(mail.Id);
+        window.Show();
     }
 
     private async void FirstLoad(object sender, RoutedEventArgs e)

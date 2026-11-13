@@ -25,7 +25,7 @@
         <Border x:Name="StatusPanel" Grid.Row="1" Background="#E8EDF3" CornerRadius="8" Padding="12" Margin="0,0,0,12" Visibility="Collapsed">
             <TextBlock x:Name="StatusText" Foreground="#3E5270" TextWrapping="Wrap"/>
         </Border>
-        <DataGrid x:Name="MailGrid" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True"
+        <DataGrid MouseLeftButtonUp="MailGrid_Click" PreviewKeyDown="MailGrid_KeyDown" x:Name="MailGrid" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True"
                   CanUserAddRows="False" CanUserDeleteRows="False" CanUserSortColumns="False"
                   SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
                   BorderBrush="#D5DDE6" HorizontalGridLinesBrush="#E8EDF3" RowHeight="52"
@@ -62,7 +62,7 @@
                 <TextBlock x:Name="PageText" Text="1 페이지" VerticalAlignment="Center" Margin="16,0"/>
                 <Button Style="{StaticResource QuietButtonStyle}" x:Name="NextButton" Content="다음" Padding="16,6" IsEnabled="False" Click="Next_Click"/>
             </StackPanel>
-            <TextBlock Text="메일 본문은 ERP에서 확인하세요." VerticalAlignment="Center" Foreground="#5A6F8A"/>
+            <TextBlock Text="메일을 클릭하면 본문이 열립니다." VerticalAlignment="Center" Foreground="#5A6F8A"/>
         </DockPanel>
     </Grid>
 </Window>

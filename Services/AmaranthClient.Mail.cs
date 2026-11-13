@@ -16,11 +16,24 @@ public sealed partial class AmaranthClient
         if (session == null) throw new ArgumentNullException(nameof(session));
         if (page < 1 || pageSize < 1 || pageSize > 100) throw new ArgumentOutOfRangeException(nameof(page));
         const string path = "/mail/mail003A01";
-        string transactionId = Guid.NewGuid().ToString("N");
-        long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        // INBOX는 로그인 계정의 받은메일함을 선택합니다. 다른 계정의 mboxSeq를 재사용하지 않습니다.
+        // INBOX는 로그인 계정의 받은메일함을 선택합니다.
         string json = JsonSerializer.Serialize(new { boxName = "INBOX", mainApiCode = "mail003A01",
             page, pageSize, sort = "rfc822date", sortType = "desc", listType = "", showType = "", seen = false });
+        return ParseInboxResponse(await SendMailApiAsync(session, path, json, cancellationToken), page, pageSize);
+    }
+
+    public async Task<MailBody> GetMailBodyAsync(AmaranthSession session, long uid, CancellationToken cancellationToken = default)
+    {
+        if (session == null) throw new ArgumentNullException(nameof(session));
+        if (uid <= 0) throw new ArgumentOutOfRangeException(nameof(uid));
+        string json = JsonSerializer.Serialize(new { uid = uid.ToString(CultureInfo.InvariantCulture) });
+        return ParseMailBodyResponse(await SendMailApiAsync(session, "/mail/mail002A01", json, cancellationToken), uid);
+    }
+
+    private async Task<string> SendMailApiAsync(AmaranthSession session, string path, string json, CancellationToken cancellationToken)
+    {
+        string transactionId = Guid.NewGuid().ToString("N");
+        long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         using var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + path);
         request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + session.AuthToken);
@@ -37,7 +50,36 @@ public sealed partial class AmaranthClient
             throw new InvalidOperationException($"메일을 조회하지 못했습니다. 다시 로그인하거나 잠시 후 새로고침해 주세요. (HTTP {(int)response.StatusCode})");
         string body = await response.Content.ReadAsStringAsync();
         cancellationToken.ThrowIfCancellationRequested();
-        return ParseInboxResponse(body, page, pageSize);
+        return body;
+    }
+
+    public static MailBody ParseMailBodyResponse(string json, long expectedUid)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            if (MailNumber(root, "resultCode") != 0) throw new FormatException();
+            var data = root.GetProperty("resultData");
+            if (MailNumber(data, "code") != 0 || data.GetProperty("muid").GetInt64() != expectedUid) throw new FormatException();
+            var mime = data.GetProperty("mime");
+            var body = mime.GetProperty("body");
+            var decoded = data.GetProperty("decodeMime");
+            // decodeMime은 MIME encoded-word를 이미 디코딩한 표시용 헤더입니다.
+            return new MailBody {
+                Id = expectedUid,
+                Subject = WebUtility.HtmlDecode(GetString(decoded, "subject")),
+                From = WebUtility.HtmlDecode(GetString(decoded, "from")),
+                To = WebUtility.HtmlDecode(GetString(decoded, "to")),
+                Date = GetString(decoded, "date"),
+                Html = GetString(body, "html"), Plain = GetString(body, "plain"),
+                AttachmentCount = mime.TryGetProperty("fileList", out var files) && files.ValueKind == JsonValueKind.Array ? files.GetArrayLength() : 0
+            };
+        }
+        catch (Exception error) when (error is JsonException or KeyNotFoundException or FormatException or InvalidOperationException or OverflowException)
+        {
+            throw new InvalidOperationException("메일 본문을 읽지 못했습니다. 로그인 상태를 확인하고 다시 시도해 주세요.");
+        }
     }
 
     public static InboxMailPage ParseInboxResponse(string json, int page, int pageSize)
