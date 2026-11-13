@@ -509,6 +509,13 @@ public partial class MainWindow : Window
         SidePanel.BeginAnimation(WidthProperty, animation);
     }
 
+    private void EmailList_Click(object sender, RoutedEventArgs e)
+    {
+        CollapseMenu(animate: true);
+        MessageBox.Show(this, "이메일 목록 기능을 준비 중입니다.", "이메일 목록",
+            MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
     private void Manual_Click(object sender, RoutedEventArgs e)
     {
         ManualWindow.Open(this);

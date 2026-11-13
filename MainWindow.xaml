@@ -62,6 +62,9 @@
                 <Grid x:Name="SideMenuItems" Visibility="Collapsed">
                     <StackPanel Margin="10,56,10,12" VerticalAlignment="Top">
                         <Button Style="{StaticResource SideMenuButtonStyle}"
+                                Content="이메일 목록"
+                                Click="EmailList_Click" />
+                        <Button Style="{StaticResource SideMenuButtonStyle}"
                                 Content="사용자 매뉴얼"
                                 Click="Manual_Click" />
                         <Button Style="{StaticResource SideMenuButtonStyle}"
