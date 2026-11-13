@@ -31,12 +31,10 @@ public partial class ManualWindow : Window
         string htmlPath = Path.Combine(folder, "ReadMe.html");
         if (!File.Exists(htmlPath))
         {
-            MessageBox.Show(
+            Toast.Warning(
                 owner,
-                "사용 매뉴얼 파일(ReadMe.html)을 찾을 수 없습니다.\n프로그램이 있는 폴더를 확인해 주세요.",
-                "사용자 매뉴얼",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
+                "사용 매뉴얼 파일(ReadMe.html)을 찾을 수 없습니다. 프로그램이 있는 폴더를 확인해 주세요.",
+                "사용자 매뉴얼");
             return;
         }
 

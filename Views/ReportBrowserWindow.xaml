@@ -7,8 +7,8 @@
         MinWidth="720"
         MinHeight="560"
         WindowStartupLocation="CenterScreen"
-        FontFamily="Segoe UI"
-        Background="#F3F5F8">
+        FontFamily="../Assets/Fonts/#IBM Plex Sans KR, Segoe UI"
+        Background="#F1F0EC">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -17,8 +17,8 @@
 
         <Border Grid.Row="0"
                 Padding="12,10"
-                Background="#EEF1F5"
-                BorderBrush="#D5DDE6"
+                Background="#FAFAF8"
+                BorderBrush="#E6E4DE"
                 BorderThickness="0,0,0,1">
             <TextBox x:Name="AddressBox"
                      Height="36"
@@ -26,9 +26,9 @@
                      Padding="12,0"
                      FontSize="12"
                      FontFamily="Consolas, Segoe UI"
-                     Foreground="#2A3548"
-                     Background="#FBFCFD"
-                     BorderBrush="#D5DDE6"
+                     Foreground="#1C1B19"
+                     Background="#FFFFFF"
+                     BorderBrush="#E6E4DE"
                      BorderThickness="1"
                      VerticalContentAlignment="Center"
                      IsReadOnly="True"
@@ -55,16 +55,16 @@
 
         <Grid x:Name="BrowserHost" Grid.Row="1">
             <Border x:Name="LoadingOverlay"
-                    Background="#F3F5F8"
+                    Background="#F1F0EC"
                     Panel.ZIndex="1">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <ProgressBar Width="160" Height="4" IsIndeterminate="True"
-                                 Foreground="#3E5270" BorderThickness="0" />
+                                 Foreground="#5847C9" Background="#ECEAE4" BorderThickness="0" />
                     <TextBlock x:Name="LoadingText"
                                Margin="0,12,0,0"
                                HorizontalAlignment="Center"
                                FontSize="13"
-                               Foreground="#5A6F8A"
+                               Foreground="#5F5D57"
                                Text="보고서 작성 화면을 여는 중..." />
                 </StackPanel>
             </Border>

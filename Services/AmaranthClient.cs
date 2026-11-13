@@ -26,6 +26,7 @@ public sealed partial class AmaranthClient
 
     private readonly CookieContainer _cookieContainer = new();
     private readonly HttpClient _httpClient;
+    private readonly HttpClient _attachmentHttpClient;
 
     public AmaranthClient()
     {
@@ -37,6 +38,13 @@ public sealed partial class AmaranthClient
         };
 
         _httpClient = new HttpClient(handler);
+        _attachmentHttpClient = new HttpClient(new HttpClientHandler
+        {
+            CookieContainer = _cookieContainer,
+            UseCookies = true,
+            AllowAutoRedirect = false,
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+        }) { Timeout = System.Threading.Timeout.InfiniteTimeSpan };
         ConfigureHttpClient();
     }
 

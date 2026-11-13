@@ -7,20 +7,20 @@
         MinWidth="640"
         MinHeight="480"
         WindowStartupLocation="CenterOwner"
-        FontFamily="Segoe UI"
-        Background="#F3F5F8">
+        FontFamily="{StaticResource AppFont}"
+        Background="#F1F0EC">
     <Grid x:Name="BrowserHost">
         <Border x:Name="LoadingOverlay"
-                Background="#F3F5F8"
+                Background="#F1F0EC"
                 Panel.ZIndex="1">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ProgressBar Width="160" Height="4" IsIndeterminate="True"
-                             Foreground="#3E5270" BorderThickness="0" />
+                             Foreground="#5847C9" Background="#ECEAE4" BorderThickness="0" />
                 <TextBlock x:Name="LoadingText"
                            Margin="0,12,0,0"
                            HorizontalAlignment="Center"
                            FontSize="13"
-                           Foreground="#5A6F8A"
+                           Foreground="#5F5D57"
                            Text="사용 매뉴얼을 여는 중..." />
             </StackPanel>
         </Border>

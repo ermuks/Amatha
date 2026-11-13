@@ -19,6 +19,7 @@ public partial class LoginPage : Page
     public LoginPage()
     {
         InitializeComponent();
+        LoginVersionText.Text = AppVersion.FooterLabel;
         DataContext = ViewModel;
         Loaded += LoginPage_Loaded;
         Unloaded += LoginPage_Unloaded;

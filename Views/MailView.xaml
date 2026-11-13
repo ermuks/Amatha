@@ -1,0 +1,260 @@
+<UserControl x:Class="Amaranth10API.Views.MailView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Background="#FFFFFF" Foreground="#1C1B19">
+    <!--
+        주의: 메일 스모크 테스트는 App.xaml 의 QuietButtonStyle 하나만 등록한 상태로 이 화면을 띄웁니다.
+        그래서 이 파일은 QuietButtonStyle 외의 앱 리소스를 참조하지 않고 색상을 직접 적습니다.
+        (색 기준: docs/redesign/REDESIGN.md)
+    -->
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+        <Style x:Key="MailCellText" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="12,0"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style x:Key="MailCellStyle" TargetType="DataGridCell">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Background="Transparent">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="MailRowStyle" TargetType="DataGridRow">
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Foreground" Value="#1C1B19"/>
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsUnread}" Value="True">
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                </DataTrigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FAFAF8"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#F2F0FB"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 필터 알약 (전체 / 안 읽음 / 첨부파일) -->
+        <Style x:Key="FilterPillStyle" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="MailFilter"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Margin" Value="6,0,0,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4A4843"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" CornerRadius="15" Padding="{TemplateBinding Padding}"
+                                Background="#FFFFFF" BorderBrush="#E0DED8" BorderThickness="1">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#F7F6F3"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#1C1B19"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#1C1B19"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 검색 상자: 회색 바탕 + 돋보기 + 안내 문구 -->
+        <Style x:Key="SearchBoxStyle" TargetType="TextBox">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#1C1B19"/>
+            <Setter Property="CaretBrush" Value="#5847C9"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd" Background="#F5F4F0" CornerRadius="10" BorderBrush="Transparent" BorderThickness="1" Padding="12,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Viewbox Width="16" Height="16" VerticalAlignment="Center">
+                                    <Path Width="24" Height="24" Stretch="None" Stroke="#6E6B64" StrokeThickness="2"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                          Data="M18,11 A7,7 0 1 1 4,11 A7,7 0 1 1 18,11 Z M20,20 L16.5,16.5"/>
+                                </Viewbox>
+                                <TextBlock x:Name="Hint" Grid.Column="2" VerticalAlignment="Center" Foreground="#8A877F"
+                                           Text="보낸 사람, 제목 검색" IsHitTestVisible="False" Visibility="Collapsed"/>
+                                <ScrollViewer x:Name="PART_ContentHost" Grid.Column="2" VerticalAlignment="Center"
+                                              VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="Hint" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#5847C9"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- 목록과 본문 사이 구분선 (끌어서 목록 폭 조절) -->
+        <Style x:Key="PaneSplitterStyle" TargetType="GridSplitter">
+            <Setter Property="Width" Value="9"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="ResizeBehavior" Value="PreviousAndNext"/>
+            <Setter Property="ResizeDirection" Value="Columns"/>
+            <Setter Property="Cursor" Value="SizeWE"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GridSplitter">
+                        <Grid Background="Transparent">
+                            <Rectangle x:Name="Line" Width="1" Fill="#EFEDE8" HorizontalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Line" Property="Fill" Value="#C9C6BE"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+    <!-- 왼쪽 목록 + 오른쪽 본문 (2단) -->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="ListColumn" Width="380" MinWidth="300" MaxWidth="560"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*" MinWidth="360"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid x:Name="ListPanel" Margin="24,24,14,16" Background="#FFFFFF">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/><RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- 제목 + 새로고침 -->
+            <DockPanel>
+                <Button Style="{StaticResource QuietButtonStyle}" x:Name="RefreshButton" DockPanel.Dock="Right" Content="새로고침"
+                        VerticalAlignment="Center" Click="Refresh_Click"/>
+                <StackPanel>
+                    <TextBlock Text="메일" FontSize="20" FontWeight="Bold" Foreground="#1C1B19"/>
+                    <TextBlock x:Name="SummaryText" Margin="0,4,0,0" FontSize="12" Foreground="#6E6B64" Text="최신 메일부터 표시합니다."
+                               TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+            </DockPanel>
+
+            <!-- 검색 + 필터 (현재 페이지 안에서 걸러 냄) -->
+            <StackPanel Grid.Row="1" Margin="0,16,0,10">
+                <TextBox x:Name="SearchBox" Style="{StaticResource SearchBoxStyle}"
+                         TextChanged="Search_TextChanged" ToolTip="현재 페이지의 메일에서 보낸 사람·제목을 찾습니다."/>
+                <StackPanel Orientation="Horizontal" Margin="-6,10,0,0">
+                    <RadioButton x:Name="FilterAll" Style="{StaticResource FilterPillStyle}" Content="전체" IsChecked="True" Checked="Filter_Changed"/>
+                    <RadioButton x:Name="FilterUnread" Style="{StaticResource FilterPillStyle}" Content="안 읽음" Checked="Filter_Changed"/>
+                    <RadioButton x:Name="FilterAttachment" Style="{StaticResource FilterPillStyle}" Content="첨부파일" Checked="Filter_Changed"/>
+                </StackPanel>
+            </StackPanel>
+
+            <Border x:Name="StatusPanel" Grid.Row="2" Background="#F5F4F0" CornerRadius="10" Padding="14,12" Margin="0,0,0,10" Visibility="Collapsed">
+                <TextBlock x:Name="StatusText" FontSize="13" Foreground="#5F5D57" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- 메일 목록: 한 행에 보낸 사람·시각 / 제목·첨부 -->
+            <Border Grid.Row="3" BorderBrush="#EFEDE8" BorderThickness="0,1,0,1">
+                <DataGrid MouseLeftButtonUp="MailGrid_Click" PreviewKeyDown="MailGrid_KeyDown" SelectionChanged="MailGrid_SelectionChanged"
+                          x:Name="MailGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                          CanUserAddRows="False" CanUserDeleteRows="False" CanUserSortColumns="False" CanUserResizeRows="False" CanUserResizeColumns="False"
+                          SelectionMode="Single" SelectionUnit="FullRow" HeadersVisibility="None" GridLinesVisibility="Horizontal"
+                          BorderThickness="0" HorizontalGridLinesBrush="#EFEDE8" RowHeight="64"
+                          Background="#FFFFFF" Foreground="#1C1B19" EnableRowVirtualization="True"
+                          CellStyle="{StaticResource MailCellStyle}"
+                          RowStyle="{StaticResource MailRowStyle}"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <DataGrid.Columns>
+                        <!-- 안 읽음 점 -->
+                        <DataGridTemplateColumn Header="" Width="22">
+                            <DataGridTemplateColumn.CellTemplate><DataTemplate>
+                                <Ellipse Width="7" Height="7" Fill="#5847C9" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,4,0,0"
+                                         ToolTip="{Binding ReadLabel}"
+                                         Visibility="{Binding IsUnread, Converter={StaticResource BoolToVisibility}}"/>
+                            </DataTemplate></DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="메일" Width="*">
+                            <DataGridTemplateColumn.CellTemplate><DataTemplate>
+                                <Grid Margin="2,0,12,0" VerticalAlignment="Center">
+                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding SenderName}" ToolTip="{Binding SenderAddress}" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding DisplayTime}" ToolTip="{Binding ReceivedAt}" FontSize="12" FontWeight="Normal"
+                                               Foreground="#6E6B64" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="1" Text="{Binding Subject}" ToolTip="{Binding Subject}" FontSize="13" Foreground="#4A4843"
+                                               TextTrimming="CharacterEllipsis" Margin="0,4,0,0"/>
+                                    <Viewbox Grid.Row="1" Grid.Column="1" Width="14" Height="14" HorizontalAlignment="Right" Margin="10,4,0,0" ToolTip="첨부파일 있음"
+                                             Visibility="{Binding HasAttachment, Converter={StaticResource BoolToVisibility}}">
+                                        <Path Width="24" Height="24" Stretch="None" Stroke="#5F5D57" StrokeThickness="2"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                              Data="M21,11 L12.5,19.5 A5,5 0 0 1 5.5,12.5 L14,4 A3.5,3.5 0 0 1 19,9 L10.5,17.5 A2,2 0 0 1 7.5,14.5 L15,7"/>
+                                    </Viewbox>
+                                </Grid>
+                            </DataTemplate></DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <!-- 페이지 -->
+            <StackPanel Grid.Row="4" Margin="0,12,0,0" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Style="{StaticResource QuietButtonStyle}" x:Name="PreviousButton" Content="이전" Padding="14,5" IsEnabled="False" Click="Previous_Click"/>
+                <TextBlock x:Name="PageText" Text="1 페이지" VerticalAlignment="Center" Margin="14,0" FontSize="12" Foreground="#6E6B64"/>
+                <Button Style="{StaticResource QuietButtonStyle}" x:Name="NextButton" Content="다음" Padding="14,5" IsEnabled="False" Click="Next_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <GridSplitter x:Name="PaneSplitter" Grid.Column="1" Style="{StaticResource PaneSplitterStyle}" ToolTip="끌어서 목록 폭 조절"/>
+
+        <!-- 오른쪽: 선택한 메일 본문 -->
+        <Grid Grid.Column="2">
+            <StackPanel x:Name="EmptyBodyPanel" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24">
+                <Border Width="48" Height="48" CornerRadius="14" Background="#F5F4F0" HorizontalAlignment="Center">
+                    <Viewbox Width="22" Height="22">
+                        <Path Width="24" Height="24" Stretch="None" Stroke="#9A978F" StrokeThickness="1.8"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                              Data="M4,6 L20,6 L20,18 L4,18 Z M4,7 L12,13 L20,7"/>
+                    </Viewbox>
+                </Border>
+                <TextBlock Margin="0,14,0,0" HorizontalAlignment="Center" FontSize="14" FontWeight="SemiBold" Foreground="#2E2D2A" Text="메일을 선택해 주세요"/>
+                <TextBlock Margin="0,6,0,0" HorizontalAlignment="Center" FontSize="13" Foreground="#6E6B64" TextAlignment="Center" LineHeight="20"
+                           Text="왼쪽 목록에서 메일을 누르면 본문과 첨부파일이 여기에 보여요.&#10;↑ ↓ 키로 다음 메일로 넘어갈 수 있어요."/>
+            </StackPanel>
+            <ContentControl x:Name="BodyHost" Visibility="Collapsed" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+        </Grid>
+    </Grid>
+</UserControl>

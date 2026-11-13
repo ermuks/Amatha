@@ -12,6 +12,7 @@ using System.Windows.Threading;
 using Amaranth10API.Helpers;
 using Amaranth10API.Models;
 using Amaranth10API.Services;
+using Amaranth10API.ViewModels;
 using Amaranth10API.Views;
 using Forms = System.Windows.Forms;
 
@@ -21,9 +22,9 @@ public partial class MainWindow : Window
 {
     private readonly Forms.NotifyIcon _tray = new();
     private TrayMenuWindow? _trayMenu;
-    private MailWindow? _mailWindow;
+    private MailView? _mailView;
+    private bool _showingMail;
     private bool _forceClose;
-    private bool _menuExpanded;
     private bool _hideToTrayAfterRender;
     private AppUpdateInfo? _availableUpdate;
     private bool _updateBusy;
@@ -92,12 +93,7 @@ public partial class MainWindow : Window
         {
             if (notifyResult)
             {
-                await Dispatcher.InvokeAsync(() => MessageBox.Show(
-                    this,
-                    "업데이트를 확인하지 못했습니다.",
-                    "아맛다보고서",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning));
+                await Dispatcher.InvokeAsync(() => Toast.Warning(this, "업데이트를 확인하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.", "업데이트 확인"));
             }
         }
         finally
@@ -117,12 +113,7 @@ public partial class MainWindow : Window
         HideUpdateLink();
         if (notifyResult)
         {
-            MessageBox.Show(
-                this,
-                "지금 쓰는 버전이 최신입니다.",
-                "아맛다보고서",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            Toast.Success(this, "지금 쓰는 버전이 최신입니다.", "업데이트 확인");
         }
     }
 
@@ -144,7 +135,6 @@ public partial class MainWindow : Window
 
     private async void CheckUpdate_Click(object sender, RoutedEventArgs e)
     {
-        CollapseMenu(animate: true);
         await CheckForUpdateAsync(notifyResult: true);
     }
 
@@ -186,12 +176,7 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             RestoreUpdateLink();
-            MessageBox.Show(
-                this,
-                "업데이트를 받지 못했습니다.\n" + exception.Message,
-                "아맛다보고서",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
+            Toast.Warning(this, "업데이트를 받지 못했습니다. " + exception.Message, "업데이트");
         }
         finally
         {
@@ -247,20 +232,31 @@ public partial class MainWindow : Window
 
     public void NavigateToLogin()
     {
+        _mailView?.Dispose(); _mailView = null; MailHost.Content = null; _showingMail = false;
         AppRuntime.Current.ClearLogin();
         SidePanel.Visibility = Visibility.Collapsed;
-        CollapseMenu(animate: false);
+        ApplyLoginChrome();
         SettingsOverlay.Visibility = Visibility.Collapsed;
+        UpdateContentVisibility();
         RootFrame.Navigate(new LoginPage());
         ClearHistory();
     }
 
     public void NavigateToDashboard(AmaranthSession session)
     {
+        _showingMail = false;
         SidePanel.Visibility = Visibility.Visible;
+        ApplyShellChrome();
         SettingsOverlay.Visibility = Visibility.Collapsed;
+        UpdateContentVisibility();
+        SetActiveNav(NavDashboard);
         DashboardPage page = new(session);
         AppRuntime.Current.Dashboard = page.ViewModel;
+        page.ViewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(DashboardViewModel.TotalCount)) UpdateDashboardBadge(page.ViewModel.TotalCount);
+        };
+        UpdateDashboardBadge(page.ViewModel.TotalCount);
         RootFrame.Navigate(page);
         ClearHistory();
     }
@@ -344,7 +340,6 @@ public partial class MainWindow : Window
     private void ConfirmAndExit()
     {
         ShowFromTray();
-        CollapseMenu(animate: true);
         if (!ShowConfirm("종료하기", "정말로 종료하시겠습니까?"))
         {
             return;
@@ -362,9 +357,11 @@ public partial class MainWindow : Window
         {
             confirmed = result;
             ConfirmOverlay.Visibility = Visibility.Collapsed;
+            UpdateContentVisibility();
             frame.Continue = false;
         }, detail, showSilentUpdate);
         ConfirmOverlay.Visibility = Visibility.Visible;
+        UpdateContentVisibility();
         ConfirmOverlay.Focus();
         ConfirmDialogHost.Focus();
         Dispatcher.PushFrame(frame);
@@ -400,6 +397,7 @@ public partial class MainWindow : Window
     {
         if (_forceClose)
         {
+            _mailView?.Dispose(); _mailView = null;
             _trayMenu?.Close();
             _tray.Visible = false;
             _tray.Dispose();
@@ -409,140 +407,114 @@ public partial class MainWindow : Window
         e.Cancel = true;
         Hide();
         ShowInTaskbar = false;
-        CollapseMenu(animate: false);
-    }
-
-    private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
-    {
-        if (!_menuExpanded)
-        {
-            return;
-        }
-
-        if (e.OriginalSource is DependencyObject source && IsInside(source, SidePanel))
-        {
-            return;
-        }
-
-        CollapseMenu(animate: true);
-    }
-
-    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Escape && _menuExpanded)
-        {
-            CollapseMenu(animate: true);
-            e.Handled = true;
-        }
-    }
-
-    private void Window_Deactivated(object sender, EventArgs e)
-    {
-        if (_menuExpanded)
-        {
-            CollapseMenu(animate: true);
-        }
-    }
-
-    private void Hamburger_Click(object sender, RoutedEventArgs e)
-    {
-        if (_menuExpanded)
-        {
-            CollapseMenu(animate: true);
-        }
-        else
-        {
-            ExpandMenu();
-        }
-    }
-
-    private static bool IsInside(DependencyObject current, DependencyObject ancestor)
-    {
-        DependencyObject? node = current;
-        while (node != null)
-        {
-            if (ReferenceEquals(node, ancestor))
-            {
-                return true;
-            }
-
-            DependencyObject? parent = VisualTreeHelper.GetParent(node);
-            if (parent == null && node is FrameworkElement element)
-            {
-                parent = element.Parent;
-            }
-
-            node = parent;
-        }
-
-        return false;
-    }
-
-    private void ExpandMenu()
-    {
-        _menuExpanded = true;
-        SideMenuItems.Visibility = Visibility.Visible;
-        AnimatePanel(240);
-    }
-
-    private void CollapseMenu(bool animate)
-    {
-        _menuExpanded = false;
-        SideMenuItems.Visibility = Visibility.Collapsed;
-        if (animate)
-        {
-            AnimatePanel(40);
-        }
-        else
-        {
-            SidePanel.BeginAnimation(WidthProperty, null);
-            SidePanel.Width = 40;
-        }
-    }
-
-    private void AnimatePanel(double width)
-    {
-        DoubleAnimation animation = new(width, TimeSpan.FromMilliseconds(180))
-        {
-            AccelerationRatio = 0.2,
-            DecelerationRatio = 0.4
-        };
-        SidePanel.BeginAnimation(WidthProperty, animation);
     }
 
     private void EmailList_Click(object sender, RoutedEventArgs e)
     {
-        CollapseMenu(animate: true);
         AmaranthSession? session = AppRuntime.Current.Session;
         if (session == null) return;
-        if (_mailWindow != null)
+        if (_mailView == null)
         {
-            _mailWindow.WindowState = WindowState.Normal;
-            _mailWindow.Activate();
-            return;
+            _mailView = new MailView(App.Client, session);
+            _mailView.DashboardRequested += ShowDashboard;
+            _mailView.UnreadCountChanged += UpdateMailBadge;
+            MailHost.Content = _mailView;
         }
-        _mailWindow = new MailWindow(App.Client, session) { Owner = this };
-        _mailWindow.Closed += (_, _) => _mailWindow = null;
-        _mailWindow.Show();
+        _showingMail = true;
+        LeaveSettings();
+        SetActiveNav(NavMail);
+        UpdateContentVisibility();
+    }
+
+    private void Dashboard_Click(object sender, RoutedEventArgs e) => ShowDashboard();
+
+    private void ShowDashboard()
+    {
+        _showingMail = false;
+        LeaveSettings();
+        SetActiveNav(NavDashboard);
+        UpdateContentVisibility();
+    }
+
+    private void UpdateContentVisibility()
+    {
+        RootFrame.Visibility = _showingMail ? Visibility.Collapsed : Visibility.Visible;
+        // WebView2는 HWND를 사용하므로 WPF 설정·확인 창을 가리지 않도록 숨깁니다.
+        MailHost.Visibility = _showingMail && SettingsOverlay.Visibility != Visibility.Visible
+            && ConfirmOverlay.Visibility != Visibility.Visible ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void Manual_Click(object sender, RoutedEventArgs e)
     {
         ManualWindow.Open(this);
-        CollapseMenu(animate: true);
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
         SettingsOverlay.Visibility = Visibility.Visible;
-        CollapseMenu(animate: true);
+        SetActiveNav(NavSettings);
+        UpdateContentVisibility();
+    }
+
+    /// <summary>미작성 목록 배너의 '알림 설정' 버튼에서 호출합니다.</summary>
+    public void OpenSettings() => Settings_Click(this, new RoutedEventArgs());
+
+    /// <summary>환경설정에서 다른 메뉴로 이동할 때 입력 중인 값을 반영하고 새로고침 타이머를 다시 시작합니다.</summary>
+    private void LeaveSettings()
+    {
+        if (SettingsOverlay.Visibility != Visibility.Visible)
+        {
+            return;
+        }
+
+        BindingOperations.GetBindingExpression(NotificationIntervalBox, TextBox.TextProperty)?.UpdateSource();
+        SettingsOverlay.Visibility = Visibility.Collapsed;
+        AppRuntime.Current.RestartRefreshTimer();
+    }
+
+    private void SetActiveNav(RadioButton target)
+    {
+        NavDashboard.IsChecked = ReferenceEquals(target, NavDashboard);
+        NavMail.IsChecked = ReferenceEquals(target, NavMail);
+        NavSettings.IsChecked = ReferenceEquals(target, NavSettings);
+    }
+
+    private void UpdateDashboardBadge(int count)
+    {
+        DashboardBadgeText.Text = count > 99 ? "99+" : count.ToString();
+        DashboardBadge.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void UpdateMailBadge(int unread)
+    {
+        MailBadgeText.Text = unread > 99 ? "99+" : unread.ToString();
+        MailBadge.Visibility = unread > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>로그인 화면: 사이드바 없이 창 전체를 바탕색으로 씁니다.</summary>
+    private void ApplyLoginChrome()
+    {
+        ContentPanel.Margin = new Thickness(0);
+        ContentPanel.BorderThickness = new Thickness(0);
+        ContentPanel.CornerRadius = new CornerRadius(0);
+        ContentPanel.Background = (System.Windows.Media.Brush)FindResource("BgBrush");
+        UpdateMailBadge(0);
+        UpdateDashboardBadge(0);
+    }
+
+    /// <summary>로그인 후: 사이드바 오른쪽에 흰색 라운드 패널을 띄웁니다.</summary>
+    private void ApplyShellChrome()
+    {
+        ContentPanel.Margin = new Thickness(0, 12, 12, 12);
+        ContentPanel.BorderThickness = new Thickness(1);
+        ContentPanel.CornerRadius = new CornerRadius(16);
+        ContentPanel.Background = (System.Windows.Media.Brush)FindResource("SurfaceBrush");
     }
 
     private void CloseSettings_Click(object sender, RoutedEventArgs e)
     {
-        BindingOperations.GetBindingExpression(NotificationIntervalBox, TextBox.TextProperty)?.UpdateSource();
-        SettingsOverlay.Visibility = Visibility.Collapsed;
-        AppRuntime.Current.RestartRefreshTimer();
+        LeaveSettings();
+        UpdateContentVisibility();
     }
 
     private void NotificationInterval_LostFocus(object sender, RoutedEventArgs e)
@@ -553,7 +525,6 @@ public partial class MainWindow : Window
 
     private void Logout_Click(object sender, RoutedEventArgs e)
     {
-        _mailWindow?.Close();
         AppRuntime.Current.ForgetSavedLogin();
         NavigateToLogin();
     }

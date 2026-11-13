@@ -3,241 +3,291 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:Amaranth10API.Views"
         Title="아맛다보고서"
-        Width="900"
-        Height="760"
-        MinWidth="680"
-        MinHeight="520"
+        Width="1200"
+        Height="780"
+        MinWidth="980"
+        MinHeight="620"
         WindowStartupLocation="CenterScreen"
-        FontFamily="Segoe UI"
-        Background="#F3F5F8"
+        FontFamily="{StaticResource AppFont}"
+        Background="{StaticResource BgBrush}"
+        Foreground="{StaticResource InkBrush}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
         Icon="Assets/AppIcon.ico"
-        PreviewMouseDown="Window_PreviewMouseDown"
-        PreviewKeyDown="Window_PreviewKeyDown"
-        Deactivated="Window_Deactivated"
         Closing="Window_Closing">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
+        <!-- ───────── 사이드바 232 ───────── -->
         <Border x:Name="SidePanel"
-                Width="40"
-                Background="#3E5270"
+                Width="232"
+                Padding="18,22,14,16"
                 Visibility="Collapsed">
-            <Grid>
-                <Button x:Name="HamburgerButton"
-                        Width="40"
-                        Height="40"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Top"
-                        Click="Hamburger_Click"
-                        Cursor="Hand"
-                        ToolTip="메뉴">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="Bd" Background="Transparent">
-                                <TextBlock Text="☰"
-                                           FontSize="18"
-                                           Foreground="#F4F7FA"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" />
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Bd" Property="Background" Value="#526887" />
-                                </Trigger>
-                                <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="Bd" Property="Background" Value="#33455C" />
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
+            <DockPanel LastChildFill="False">
+                <!-- 로고 -->
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,22">
+                    <Border Width="32" Height="32" CornerRadius="9" Background="{StaticResource AccentFillBrush}">
+                        <Viewbox Width="18" Height="18">
+                            <Path Style="{StaticResource IconPath}" Data="{StaticResource IconLogo}" Stroke="White" StrokeThickness="2" />
+                        </Viewbox>
+                    </Border>
+                    <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" FontSize="16" FontWeight="Bold"
+                               Foreground="{StaticResource InkBrush}" Text="아맛다보고서" />
+                </StackPanel>
 
-                <Grid x:Name="SideMenuItems" Visibility="Collapsed">
-                    <StackPanel Margin="10,56,10,12" VerticalAlignment="Top">
-                        <Button Style="{StaticResource SideMenuButtonStyle}"
-                                Content="이메일 목록"
-                                Click="EmailList_Click" />
-                        <Button Style="{StaticResource SideMenuButtonStyle}"
-                                Content="사용자 매뉴얼"
-                                Click="Manual_Click" />
-                        <Button Style="{StaticResource SideMenuButtonStyle}"
-                                Content="업데이트 확인"
-                                Click="CheckUpdate_Click" />
-                    </StackPanel>
-                    <StackPanel Margin="10,56,10,12" VerticalAlignment="Bottom">
-                        <Button Style="{StaticResource SideMenuButtonStyle}"
-                                Content="환경설정"
-                                Click="Settings_Click" />
-                        <Button Style="{StaticResource SideMenuButtonStyle}"
-                                Content="로그아웃"
-                                Click="Logout_Click" />
-                        <Button Style="{StaticResource SideMenuButtonStyle}"
-                                Content="종료하기"
-                                Click="Exit_Click" />
-                    </StackPanel>
-                </Grid>
-            </Grid>
+                <!-- 이동 메뉴 -->
+                <StackPanel DockPanel.Dock="Top">
+                    <RadioButton x:Name="NavDashboard" Style="{StaticResource SideNavRadioStyle}"
+                                 Tag="{StaticResource IconList}" Click="Dashboard_Click" IsChecked="True">
+                        <Grid>
+                            <TextBlock Text="미작성 목록" VerticalAlignment="Center" />
+                            <Border x:Name="DashboardBadge" Style="{StaticResource BadgeStyle}" Visibility="Collapsed">
+                                <TextBlock x:Name="DashboardBadgeText" Style="{StaticResource BadgeTextStyle}" />
+                            </Border>
+                        </Grid>
+                    </RadioButton>
+                    <RadioButton x:Name="NavMail" Style="{StaticResource SideNavRadioStyle}"
+                                 Tag="{StaticResource IconMail}" Click="EmailList_Click">
+                        <Grid>
+                            <TextBlock Text="메일" VerticalAlignment="Center" />
+                            <Border x:Name="MailBadge" Style="{StaticResource BadgeStyle}" Visibility="Collapsed">
+                                <TextBlock x:Name="MailBadgeText" Style="{StaticResource BadgeTextStyle}" />
+                            </Border>
+                        </Grid>
+                    </RadioButton>
+                    <Button Style="{StaticResource SideMenuButtonStyle}" Tag="{StaticResource IconBook}"
+                            Content="사용자 매뉴얼" Click="Manual_Click" />
+                </StackPanel>
+
+                <!-- 하단 메뉴 -->
+                <StackPanel DockPanel.Dock="Bottom">
+                    <Button Style="{StaticResource SideMenuButtonStyle}" Tag="{StaticResource IconDownload}"
+                            Content="업데이트 확인" Click="CheckUpdate_Click" />
+                    <RadioButton x:Name="NavSettings" Style="{StaticResource SideNavRadioStyle}"
+                                 Tag="{StaticResource IconSettings}" Content="환경설정" Click="Settings_Click" />
+                    <Button Style="{StaticResource SideMenuButtonStyle}" Tag="{StaticResource IconLogout}"
+                            Content="로그아웃" Click="Logout_Click" />
+                    <Button Style="{StaticResource SideMenuButtonStyle}" Tag="{StaticResource IconPower}"
+                            Content="종료하기" Click="Exit_Click" />
+                    <Grid Margin="12,10,12,0">
+                        <TextBlock x:Name="UpdateLink"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Center"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource AccentFillBrush}"
+                                   TextDecorations="Underline"
+                                   Cursor="Hand"
+                                   Visibility="Collapsed"
+                                   ToolTip="클릭하면 새 버전을 설치합니다"
+                                   MouseLeftButtonUp="UpdateLink_MouseLeftButtonUp" />
+                        <TextBlock x:Name="VersionText"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   FontSize="12"
+                                   Foreground="{StaticResource MutedInkBrush}" />
+                    </Grid>
+                </StackPanel>
+            </DockPanel>
         </Border>
 
-        <Grid Grid.Column="1">
-            <Frame x:Name="RootFrame"
-                   NavigationUIVisibility="Hidden"
-                   JournalOwnership="OwnsJournal" />
+        <!-- ───────── 콘텐츠 패널 (흰색, 라운드 16) ───────── -->
+        <Border x:Name="ContentPanel"
+                Grid.Column="1"
+                Margin="0"
+                Background="{StaticResource BgBrush}"
+                BorderBrush="{StaticResource LineBrush}"
+                BorderThickness="0"
+                CornerRadius="0">
+            <Grid>
+                <Frame x:Name="RootFrame"
+                       NavigationUIVisibility="Hidden"
+                       JournalOwnership="OwnsJournal" />
 
-            <Border x:Name="SettingsOverlay"
-                    Background="#F3F5F8"
-                    Visibility="Collapsed">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="28,20,28,28">
-                    <StackPanel MaxWidth="520" HorizontalAlignment="Left">
-                        <Grid Margin="0,0,0,22">
-                            <TextBlock FontSize="22" FontWeight="SemiBold"
-                                       Foreground="#2A3548" Text="환경설정" />
-                            <Button HorizontalAlignment="Right"
-                                    Content="닫기"
-                                    Style="{StaticResource QuietButtonStyle}"
-                                    Click="CloseSettings_Click" />
-                        </Grid>
+                <ContentControl x:Name="MailHost" Visibility="Collapsed"
+                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
 
-                        <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="#5A6F8A"
-                                   Text="알림" Margin="0,0,0,10" />
+                <!-- 환경설정 (사이드바의 '환경설정'으로 열림, 바꾼 값은 바로 저장) -->
+                <Border x:Name="SettingsOverlay"
+                        Background="{StaticResource SurfaceBrush}"
+                        CornerRadius="16"
+                        Visibility="Collapsed">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="40,32,40,40">
+                        <StackPanel MaxWidth="1040">
+                            <TextBlock FontSize="26" FontWeight="Bold" Foreground="{StaticResource InkBrush}" Text="환경설정" />
+                            <TextBlock Margin="0,6,0,24" FontSize="14" Foreground="{StaticResource SubBrush}"
+                                       Text="바꾼 내용은 바로 저장돼요." />
 
-                        <CheckBox Content="Windows 알림 기능 활성화"
-                                  IsChecked="{Binding NotificationsEnabled}"
-                                  Style="{StaticResource ToggleCheckStyle}"
-                                  Margin="0,0,0,14" />
-
-                        <StackPanel IsEnabled="{Binding NotificationOptionsEnabled}" Margin="18,0,0,24">
-                            <Grid Margin="0,0,0,12">
+                            <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="#2A3548"
-                                           Text="알림 새로고침 간격 (초)" />
-                                <TextBox x:Name="NotificationIntervalBox"
-                                         Grid.Column="1"
-                                         Style="{StaticResource FieldStyle}"
-                                         Height="36" MinHeight="36"
-                                         Text="{Binding NotificationIntervalSeconds, UpdateSourceTrigger=PropertyChanged}"
-                                         PreviewTextInput="DigitsOnly"
-                                         DataObject.Pasting="DigitsOnlyPasting"
-                                         LostFocus="NotificationInterval_LostFocus" />
+
+                                <!-- 왼쪽 열 -->
+                                <StackPanel>
+                                    <!-- 알림 -->
+                                    <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12" Padding="20,6">
+                                        <StackPanel>
+                                            <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource SubBrush}"
+                                                       Text="알림" Margin="0,14,0,4" />
+                                            <Border BorderBrush="{StaticResource LineSoftBrush}" BorderThickness="0,0,0,1" Padding="0,14">
+                                                <StackPanel>
+                                                    <CheckBox Content="Windows 알림 기능 활성화"
+                                                              IsChecked="{Binding NotificationsEnabled}"
+                                                              Style="{StaticResource SwitchStyle}" />
+                                                    <TextBlock Margin="0,2,56,0" FontSize="12" Foreground="{StaticResource MutedInkBrush}"
+                                                               TextWrapping="Wrap" Text="미작성 보고서가 있으면 Windows 알림을 보냅니다." />
+                                                </StackPanel>
+                                            </Border>
+                                            <StackPanel IsEnabled="{Binding NotificationOptionsEnabled}">
+                                                <Border BorderBrush="{StaticResource LineSoftBrush}" BorderThickness="0,0,0,1" Padding="0,10">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="{StaticResource InkBrush}"
+                                                                   Text="알림 새로고침 간격" />
+                                                        <TextBox x:Name="NotificationIntervalBox"
+                                                                 Grid.Column="1"
+                                                                 Width="72"
+                                                                 Style="{StaticResource FieldStyle}"
+                                                                 Height="36" MinHeight="36" Padding="8,0"
+                                                                 HorizontalContentAlignment="Center"
+                                                                 Text="{Binding NotificationIntervalSeconds, UpdateSourceTrigger=PropertyChanged}"
+                                                                 PreviewTextInput="DigitsOnly"
+                                                                 DataObject.Pasting="DigitsOnlyPasting"
+                                                                 LostFocus="NotificationInterval_LostFocus" />
+                                                        <TextBlock Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Center"
+                                                                   FontSize="12" Foreground="{StaticResource MutedInkBrush}" Text="초" />
+                                                    </Grid>
+                                                </Border>
+                                                <Border Padding="0,14">
+                                                    <CheckBox Content="알림이 오면 GUI 화면 띄우기"
+                                                              IsChecked="{Binding ShowGuiOnNotification}"
+                                                              Style="{StaticResource SwitchStyle}" />
+                                                </Border>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- 시작 -->
+                                    <Border Margin="0,16,0,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12" Padding="20,6">
+                                        <StackPanel>
+                                            <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource SubBrush}"
+                                                       Text="시작" Margin="0,14,0,4" />
+                                            <Border BorderBrush="{StaticResource LineSoftBrush}" BorderThickness="0,0,0,1" Padding="0,14">
+                                                <CheckBox Content="Windows 시작 시 자동 실행"
+                                                          IsChecked="{Binding RunOnWindowsStartup}"
+                                                          Style="{StaticResource SwitchStyle}" />
+                                            </Border>
+                                            <Border Padding="0,14">
+                                                <CheckBox Content="Windows 시작 시 트레이 아이콘으로 시작"
+                                                          IsChecked="{Binding StartInTray}"
+                                                          Style="{StaticResource SwitchStyle}" />
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- 오른쪽 열 -->
+                                <StackPanel Grid.Column="2">
+                                    <!-- 세션 -->
+                                    <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12" Padding="20,6">
+                                        <StackPanel>
+                                            <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource SubBrush}"
+                                                       Text="세션" Margin="0,14,0,4" />
+                                            <Border BorderBrush="{StaticResource LineSoftBrush}" BorderThickness="0,0,0,1" Padding="0,14">
+                                                <CheckBox Content="네트워크 재연결 시 세션 유지"
+                                                          IsChecked="{Binding KeepSessionOnReconnect}"
+                                                          Style="{StaticResource SwitchStyle}" />
+                                            </Border>
+                                            <Border Padding="0,14">
+                                                <StackPanel>
+                                                    <CheckBox Content="자동 로그인"
+                                                              IsChecked="{Binding AutoLoginEnabled}"
+                                                              Style="{StaticResource SwitchStyle}" />
+                                                    <TextBlock Margin="0,2,56,0" FontSize="12" Foreground="{StaticResource MutedInkBrush}" TextWrapping="Wrap"
+                                                               Text="Windows DPAPI로 현재 Windows 계정만 복호화할 수 있게 암호화해 저장합니다. 끄면 저장한 로그인을 지우고 다음부터 직접 로그인합니다." />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- 조회 범위 -->
+                                    <Border Margin="0,16,0,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12" Padding="20,6">
+                                        <StackPanel>
+                                            <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource SubBrush}"
+                                                       Text="신청서·보고서 조회 범위" Margin="0,14,0,4" />
+                                            <TextBlock FontSize="12" Foreground="{StaticResource MutedInkBrush}" Margin="0,0,0,4" TextWrapping="Wrap"
+                                                       Text="현재 달 기준으로 이전/이후 몇 달을 조회할지 정합니다." />
+                                            <Border BorderBrush="{StaticResource LineSoftBrush}" BorderThickness="0,0,0,1" Padding="0,10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="64" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="64" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock VerticalAlignment="Center" FontSize="14" Text="신청서" />
+                                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource MutedInkBrush}" Text="이전" Margin="0,0,8,0" />
+                                                    <TextBox Grid.Column="2" Style="{StaticResource FieldStyle}" Height="36" MinHeight="36" Padding="6,0"
+                                                             HorizontalContentAlignment="Center"
+                                                             Text="{Binding ApplicationMonthsBefore, UpdateSourceTrigger=PropertyChanged}"
+                                                             PreviewTextInput="DigitsOnly" DataObject.Pasting="DigitsOnlyPasting" />
+                                                    <TextBlock Grid.Column="3" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource MutedInkBrush}" Text="달 ~ 이후" Margin="8,0" />
+                                                    <TextBox Grid.Column="4" Style="{StaticResource FieldStyle}" Height="36" MinHeight="36" Padding="6,0"
+                                                             HorizontalContentAlignment="Center"
+                                                             Text="{Binding ApplicationMonthsAfter, UpdateSourceTrigger=PropertyChanged}"
+                                                             PreviewTextInput="DigitsOnly" DataObject.Pasting="DigitsOnlyPasting" />
+                                                    <TextBlock Grid.Column="5" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource MutedInkBrush}" Text="달" Margin="8,0,0,0" />
+                                                </Grid>
+                                            </Border>
+                                            <Border Padding="0,10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="64" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="64" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock VerticalAlignment="Center" FontSize="14" Text="보고서" />
+                                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource MutedInkBrush}" Text="이전" Margin="0,0,8,0" />
+                                                    <TextBox Grid.Column="2" Style="{StaticResource FieldStyle}" Height="36" MinHeight="36" Padding="6,0"
+                                                             HorizontalContentAlignment="Center"
+                                                             Text="{Binding ReportMonthsBefore, UpdateSourceTrigger=PropertyChanged}"
+                                                             PreviewTextInput="DigitsOnly" DataObject.Pasting="DigitsOnlyPasting" />
+                                                    <TextBlock Grid.Column="3" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource MutedInkBrush}" Text="달 ~ 이후" Margin="8,0" />
+                                                    <TextBox Grid.Column="4" Style="{StaticResource FieldStyle}" Height="36" MinHeight="36" Padding="6,0"
+                                                             HorizontalContentAlignment="Center"
+                                                             Text="{Binding ReportMonthsAfter, UpdateSourceTrigger=PropertyChanged}"
+                                                             PreviewTextInput="DigitsOnly" DataObject.Pasting="DigitsOnlyPasting" />
+                                                    <TextBlock Grid.Column="5" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource MutedInkBrush}" Text="달" Margin="8,0,0,0" />
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
                             </Grid>
-                            <CheckBox Content="GUI 화면 띄우기"
-                                      IsChecked="{Binding ShowGuiOnNotification}"
-                                      Style="{StaticResource ToggleCheckStyle}" />
                         </StackPanel>
-
-                        <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="#5A6F8A"
-                                   Text="세션" Margin="0,0,0,10" />
-                        <CheckBox Content="네트워크 재연결 시 세션 유지"
-                                  IsChecked="{Binding KeepSessionOnReconnect}"
-                                  Style="{StaticResource ToggleCheckStyle}"
-                                  Margin="0,0,0,14" />
-                        <CheckBox Content="자동 로그인"
-                                  IsChecked="{Binding AutoLoginEnabled}"
-                                  Style="{StaticResource ToggleCheckStyle}"
-                                  Margin="0,0,0,8" />
-                        <TextBlock FontSize="12" Foreground="#6D7A8C" Margin="0,0,0,24" TextWrapping="Wrap"
-                                   Text="Windows DPAPI로 현재 Windows 계정만 복호화할 수 있게 암호화해 저장합니다. 끄면 저장한 로그인을 지우고 다음부터 직접 로그인합니다." />
-
-                        <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="#5A6F8A"
-                                   Text="시작" Margin="0,0,0,10" />
-                        <CheckBox Content="Windows 시작 시 자동 실행"
-                                  IsChecked="{Binding RunOnWindowsStartup}"
-                                  Style="{StaticResource ToggleCheckStyle}"
-                                  Margin="0,0,0,14" />
-                        <CheckBox Content="Windows 시작 시 트레이 아이콘으로 시작"
-                                  IsChecked="{Binding StartInTray}"
-                                  Style="{StaticResource ToggleCheckStyle}"
-                                  Margin="0,0,0,24" />
-
-                        <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="#5A6F8A"
-                                   Text="신청서/보고서 조회 범위" Margin="0,0,0,10" />
-                        <TextBlock FontSize="12" Foreground="#6D7A8C" Margin="0,0,0,12"
-                                   Text="현재 달 기준으로 이전/이후 몇 달을 조회할지 정합니다." />
-
-                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="#2A3548"
-                                   Text="신청서" Margin="0,0,0,8" />
-                        <Grid Margin="0,0,0,16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="80" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="80" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock VerticalAlignment="Center" Text="이전" Margin="0,0,8,0" />
-                            <TextBox Grid.Column="1" Style="{StaticResource FieldStyle}" Height="36" MinHeight="36"
-                                     Text="{Binding ApplicationMonthsBefore, UpdateSourceTrigger=PropertyChanged}"
-                                     PreviewTextInput="DigitsOnly" DataObject.Pasting="DigitsOnlyPasting" />
-                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="달  ~  이후" Margin="10,0,8,0" />
-                            <TextBox Grid.Column="3" Style="{StaticResource FieldStyle}" Height="36" MinHeight="36"
-                                     Text="{Binding ApplicationMonthsAfter, UpdateSourceTrigger=PropertyChanged}"
-                                     PreviewTextInput="DigitsOnly" DataObject.Pasting="DigitsOnlyPasting" />
-                            <TextBlock Grid.Column="4" VerticalAlignment="Center" Text="달" Margin="8,0,0,0" />
-                        </Grid>
-
-                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="#2A3548"
-                                   Text="보고서" Margin="0,0,0,8" />
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="80" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="80" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock VerticalAlignment="Center" Text="이전" Margin="0,0,8,0" />
-                            <TextBox Grid.Column="1" Style="{StaticResource FieldStyle}" Height="36" MinHeight="36"
-                                     Text="{Binding ReportMonthsBefore, UpdateSourceTrigger=PropertyChanged}"
-                                     PreviewTextInput="DigitsOnly" DataObject.Pasting="DigitsOnlyPasting" />
-                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="달  ~  이후" Margin="10,0,8,0" />
-                            <TextBox Grid.Column="3" Style="{StaticResource FieldStyle}" Height="36" MinHeight="36"
-                                     Text="{Binding ReportMonthsAfter, UpdateSourceTrigger=PropertyChanged}"
-                                     PreviewTextInput="DigitsOnly" DataObject.Pasting="DigitsOnlyPasting" />
-                            <TextBlock Grid.Column="4" VerticalAlignment="Center" Text="달" Margin="8,0,0,0" />
-                        </Grid>
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
-        </Grid>
-
-        <Border Grid.Row="1"
-                Grid.ColumnSpan="2"
-                Background="{StaticResource MistBrush}"
-                BorderBrush="{StaticResource LineBrush}"
-                BorderThickness="0,1,0,0"
-                Padding="16,7">
-            <Grid>
-                <TextBlock x:Name="UpdateLink"
-                           HorizontalAlignment="Left"
-                           VerticalAlignment="Center"
-                           FontSize="11"
-                           Foreground="{StaticResource NavyBrush}"
-                           TextDecorations="Underline"
-                           Cursor="Hand"
-                           Visibility="Collapsed"
-                           ToolTip="클릭하면 새 버전을 설치합니다"
-                           MouseLeftButtonUp="UpdateLink_MouseLeftButtonUp" />
-                <TextBlock x:Name="VersionText"
-                           HorizontalAlignment="Right"
-                           FontSize="11"
-                           Foreground="{StaticResource MutedInkBrush}" />
+                    </ScrollViewer>
+                </Border>
             </Grid>
         </Border>
 
         <Border x:Name="ConfirmOverlay"
-                Grid.RowSpan="2"
                 Grid.ColumnSpan="2"
-                Background="#66000000"
+                Background="#661C1B19"
                 Visibility="Collapsed"
                 Panel.ZIndex="1000"
                 Focusable="True"

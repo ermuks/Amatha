@@ -254,9 +254,76 @@ public sealed class DashboardViewModel : ObservableObject
 
     public string SubstituteCountLabel => FormatCount(SubstituteIssueCount);
 
+    // ───── v1.14.0 리디자인: 화면 머리말·요약·배너 ─────
+    private DateTime? _lastLoadedAt;
+
+    /// <summary>예: "11월 13일 금요일"</summary>
+    public string TodayText => DateTime.Today.ToString("M월 d일 dddd", System.Globalization.CultureInfo.GetCultureInfo("ko-KR"));
+
+    public string GreetingText => string.IsNullOrWhiteSpace(_session?.EmployeeName)
+        ? "안녕하세요"
+        : $"안녕하세요, {_session!.EmployeeName}님";
+
+    public string SubtitleText => string.IsNullOrWhiteSpace(_session?.DepartmentName)
+        ? "작성하지 않은 출장·휴일근무 보고서를 모아 보여드려요."
+        : $"{_session!.DepartmentName} · 작성하지 않은 출장·휴일근무 보고서를 모아 보여드려요.";
+
+    public string LastSyncedText
+    {
+        get
+        {
+            if (_lastLoadedAt == null) return string.Empty;
+            TimeSpan elapsed = DateTime.Now - _lastLoadedAt.Value;
+            if (elapsed.TotalMinutes < 1) return "방금 전 동기화";
+            if (elapsed.TotalMinutes < 60) return $"{(int)elapsed.TotalMinutes}분 전 동기화";
+            return $"{_lastLoadedAt.Value:HH:mm} 동기화";
+        }
+    }
+
+    /// <summary>기한이 지나 지금 작성해야 하는 출장·휴일근무 보고서 수</summary>
+    public int OverdueReportCount => MissingTrips.Count(item => item.ShouldNotify) + MissingHolidayWorks.Count(item => item.ShouldNotify);
+
+    /// <summary>목록에 보이는 전체 항목 수 (사이드바 배지)</summary>
+    public int TotalCount => MissingTripCount + MissingHolidayCount + SubstituteIssueCount;
+
+    /// <summary>배너 종류: attention(보라) · calm(보라, 기한 전) · clear(초록)</summary>
+    public string BannerKind => OverdueReportCount > 0 || SubstituteIssueCount > 0
+        ? "attention"
+        : TotalCount > 0 ? "calm" : "clear";
+
+    public string BannerTitle
+    {
+        get
+        {
+            if (OverdueReportCount > 0) return $"작성할 보고서가 {OverdueReportCount}건 있어요.";
+            if (SubstituteIssueCount > 0) return "대체휴가 요청서를 확인해 주세요.";
+            if (TotalCount > 0) return "기한이 지난 보고서는 없어요.";
+            return "모든 보고서를 작성했어요.";
+        }
+    }
+
+    public string BannerMessage
+    {
+        get
+        {
+            if (OverdueReportCount > 0 || SubstituteIssueCount > 0) return "항목을 누르면 신청서를 열고 보고서 작성을 시작할 수 있어요.";
+            if (TotalCount > 0) return "일정이 끝나면 작성 알림을 보내드릴게요.";
+            return "새 일정이 끝나면 다시 알려드릴게요.";
+        }
+    }
+
+    /// <summary>화면의 "N분 전 동기화" 같은 상대 시간을 다시 계산합니다.</summary>
+    public void RefreshRelativeTimes()
+    {
+        OnPropertyChanged(nameof(LastSyncedText));
+        OnPropertyChanged(nameof(TodayText));
+    }
+
     public async Task InitializeAsync(AmaranthSession session)
     {
         _session = session;
+        OnPropertyChanged(nameof(GreetingText));
+        OnPropertyChanged(nameof(SubtitleText));
         await LoadAsync();
     }
 
@@ -298,6 +365,8 @@ public sealed class DashboardViewModel : ObservableObject
             Progress<string>? progress = silent ? null : new Progress<string>(message => StatusMessage = message);
             await _client.LoadDashboardAsync(_session, DateTime.Today, AppRuntime.Current.Settings, progress);
             ApplyMissingPeriods();
+            _lastLoadedAt = DateTime.Now;
+            RefreshRelativeTimes();
             NotifyIfNeeded();
         }
         catch (Exception exception)
@@ -382,6 +451,11 @@ public sealed class DashboardViewModel : ObservableObject
         TripEmptyText = HasMissingTrips ? string.Empty : "출장 보고서는 모두 작성되어 있습니다.";
         HolidayEmptyText = HasMissingHolidayWork ? string.Empty : "휴일근무 보고서는 모두 작성되어 있습니다.";
         SubstituteEmptyText = HasSubstituteIssues ? string.Empty : "대체휴가 요청서는 모두 맞습니다.";
+        OnPropertyChanged(nameof(OverdueReportCount));
+        OnPropertyChanged(nameof(TotalCount));
+        OnPropertyChanged(nameof(BannerKind));
+        OnPropertyChanged(nameof(BannerTitle));
+        OnPropertyChanged(nameof(BannerMessage));
     }
 
     private MissingPeriodViewModel CreateItem(MissingReportPeriod period)
@@ -410,6 +484,9 @@ public sealed class DashboardViewModel : ObservableObject
             EndDate = period.EndDate,
             IsOngoing = isOngoing,
             ShouldNotify = today > endDate,
+            TileKind = isTrip ? "trip" : "holiday",
+            Stage = isUpcoming ? "upcoming" : isOngoing ? "ongoing" : "overdue",
+            ChipText = isUpcoming ? "예정" : isOngoing ? "진행 중" : "작성 필요",
             Fill = new ReportDraftFill
             {
                 StartDate = period.StartDate.Date,
@@ -443,7 +520,10 @@ public sealed class DashboardViewModel : ObservableObject
         {
             Name = issue.IsTimeMismatch ? "대체휴가 시간 오류" : "대체휴가 미작성",
             PeriodText = FormatPeriod(workDate, workDate),
-            DayCountText = issue.IsTimeMismatch ? "오류" : "미작성",
+            DayCountText = string.Empty,
+            TileKind = issue.IsTimeMismatch ? "error" : "substitute",
+            Stage = "problem",
+            ChipText = issue.IsTimeMismatch ? "시간 오류" : "요청서 없음",
             Hint = hint,
             StatusText = status,
             StartDate = workDate,
@@ -641,4 +721,13 @@ public sealed class MissingPeriodViewModel : ObservableObject
     public Visibility HintVisibility => string.IsNullOrWhiteSpace(Hint) ? Visibility.Collapsed : Visibility.Visible;
     public Visibility ProjectCodeVisibility => string.IsNullOrWhiteSpace(ProjectCode) ? Visibility.Collapsed : Visibility.Visible;
     public Visibility StatusVisibility => string.IsNullOrWhiteSpace(StatusText) ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility DayCountVisibility => string.IsNullOrWhiteSpace(DayCountText) ? Visibility.Collapsed : Visibility.Visible;
+
+    /// <summary>유형 타일: trip · holiday · substitute · error</summary>
+    public string TileKind { get; init; } = "trip";
+
+    /// <summary>상태 칩 색: overdue(빨강) · ongoing(주황) · upcoming(파랑) · problem(빨강)</summary>
+    public string Stage { get; init; } = "overdue";
+
+    public string ChipText { get; init; } = "작성 필요";
 }

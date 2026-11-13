@@ -1,74 +1,72 @@
 <Page x:Class="Amaranth10API.Views.LoginPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      FontFamily="Segoe UI"
-      Title="로그인">
+      Title="로그인"
+      Background="{StaticResource BgBrush}">
     <Grid>
-        <Grid.Background>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Offset="0" Color="#EEF2F6" />
-                <GradientStop Offset="0.55" Color="#D9E2EC" />
-                <GradientStop Offset="1" Color="#C7D3E0" />
-            </LinearGradientBrush>
-        </Grid.Background>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border Width="420" Padding="40"
+                    Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}"
+                    BorderThickness="1" CornerRadius="16">
+                <StackPanel>
+                    <!-- 로고 -->
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="36" Height="36" CornerRadius="10" Background="{StaticResource AccentFillBrush}">
+                            <Viewbox Width="20" Height="20">
+                                <Path Style="{StaticResource IconPath}" Data="{StaticResource IconLogo}" Stroke="White" StrokeThickness="2" />
+                            </Viewbox>
+                        </Border>
+                        <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" FontSize="18" FontWeight="Bold"
+                                   Foreground="{StaticResource InkBrush}" Text="아맛다보고서" />
+                    </StackPanel>
 
-        <Ellipse Width="520" Height="520" Margin="-180,-220,0,0"
-                 HorizontalAlignment="Left" VerticalAlignment="Top"
-                 Fill="#3E5270" Opacity="0.08" />
-        <Ellipse Width="360" Height="360" Margin="0,0,-120,-160"
-                 HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                 Fill="#8FA3BB" Opacity="0.16" />
-        <Ellipse Width="180" Height="180" Margin="0,80,120,0"
-                 HorizontalAlignment="Right" VerticalAlignment="Top"
-                 Fill="#B7C6D6" Opacity="0.35" />
+                    <TextBlock Margin="0,28,0,0" FontSize="22" FontWeight="Bold" Foreground="{StaticResource InkBrush}"
+                               Text="다시 만나서 반가워요" />
+                    <TextBlock Margin="0,6,0,0" FontSize="14" Foreground="{StaticResource SubBrush}" TextWrapping="Wrap"
+                               Text="작성하지 않은 출장·휴일근무 보고서를 바로 확인합니다." />
 
-        <Border Width="460" Padding="40,42"
-                HorizontalAlignment="Center" VerticalAlignment="Center"
-                Background="#FBFCFD" BorderBrush="#D5DDE6"
-                BorderThickness="1" CornerRadius="24">
-            <StackPanel>
-                <TextBlock Margin="0,0,0,28" FontSize="14" Foreground="#6D7A8C"
-                           Text="작성하지 않은 출장·휴일근무 보고서를 바로 확인합니다." />
-
-                <TextBlock Margin="0,0,0,8" FontSize="12" FontWeight="SemiBold"
-                           Foreground="#5A6F8A" Text="아이디" />
-                <TextBox x:Name="IdBox"
-                         Style="{StaticResource FieldStyle}"
-                         IsEnabled="{Binding CanEditLogin}"
-                         Text="{Binding LoginId, UpdateSourceTrigger=PropertyChanged}"
-                         KeyDown="Input_KeyDown" />
-
-                <TextBlock Margin="0,16,0,8" FontSize="12" FontWeight="SemiBold"
-                           Foreground="#5A6F8A" Text="비밀번호" />
-                <PasswordBox x:Name="PasswordBox"
-                             Style="{StaticResource PasswordFieldStyle}"
+                    <TextBlock Margin="0,28,0,8" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{StaticResource Ink3Brush}" Text="아이디" />
+                    <TextBox x:Name="IdBox"
+                             Style="{StaticResource FieldStyle}"
                              IsEnabled="{Binding CanEditLogin}"
-                             PasswordChanged="PasswordBox_PasswordChanged"
+                             Text="{Binding LoginId, UpdateSourceTrigger=PropertyChanged}"
                              KeyDown="Input_KeyDown" />
 
-                <TextBlock Margin="0,14,0,0" FontSize="13" Foreground="#B07A7A"
-                           TextWrapping="Wrap"
-                           Text="{Binding ErrorMessage}"
-                           Visibility="{Binding HasError, Converter={StaticResource VisibleIfTrue}}" />
+                    <TextBlock Margin="0,16,0,8" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{StaticResource Ink3Brush}" Text="비밀번호" />
+                    <PasswordBox x:Name="PasswordBox"
+                                 Style="{StaticResource PasswordFieldStyle}"
+                                 IsEnabled="{Binding CanEditLogin}"
+                                 PasswordChanged="PasswordBox_PasswordChanged"
+                                 KeyDown="Input_KeyDown" />
 
-                <Button Margin="0,22,0,0"
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Content="{Binding LoginButtonText}"
-                        IsEnabled="{Binding CanEditLogin}"
-                        Click="LoginButton_Click" />
+                    <TextBlock Margin="0,14,0,0" FontSize="13" Foreground="{StaticResource RedBrush}"
+                               TextWrapping="Wrap"
+                               Text="{Binding ErrorMessage}"
+                               Visibility="{Binding HasError, Converter={StaticResource VisibleIfTrue}}" />
 
-                <TextBlock Margin="0,14,0,0" HorizontalAlignment="Center" FontSize="12"
-                           Foreground="#8A96A8"
-                           Text="{Binding StatusMessage}"
-                           Visibility="{Binding HasStatusMessage, Converter={StaticResource VisibleIfTrue}}" />
+                    <Button Margin="0,24,0,0"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Content="{Binding LoginButtonText}"
+                            IsEnabled="{Binding CanEditLogin}"
+                            Click="LoginButton_Click" />
 
-                <Button Margin="0,10,0,0"
-                        HorizontalAlignment="Center"
-                        Style="{StaticResource QuietButtonStyle}"
-                        Content="연결 대기 취소"
-                        Visibility="{Binding IsWaitingForNetwork, Converter={StaticResource VisibleIfTrue}}"
-                        Click="CancelWait_Click" />
-            </StackPanel>
-        </Border>
+                    <TextBlock Margin="0,14,0,0" HorizontalAlignment="Center" FontSize="12"
+                               Foreground="{StaticResource MutedInkBrush}"
+                               Text="{Binding StatusMessage}"
+                               Visibility="{Binding HasStatusMessage, Converter={StaticResource VisibleIfTrue}}" />
+
+                    <Button Margin="0,10,0,0"
+                            HorizontalAlignment="Center"
+                            Style="{StaticResource QuietButtonStyle}"
+                            Content="연결 대기 취소"
+                            Visibility="{Binding IsWaitingForNetwork, Converter={StaticResource VisibleIfTrue}}"
+                            Click="CancelWait_Click" />
+                </StackPanel>
+            </Border>
+            <TextBlock x:Name="LoginVersionText" Margin="0,20,0,0" HorizontalAlignment="Center" FontSize="12"
+                       Foreground="{StaticResource MutedInkBrush}" />
+        </StackPanel>
     </Grid>
 </Page>

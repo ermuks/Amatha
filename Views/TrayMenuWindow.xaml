@@ -9,31 +9,40 @@
         ResizeMode="NoResize"
         SizeToContent="WidthAndHeight"
         Topmost="True"
-        FontFamily="Segoe UI"
+        FontFamily="{StaticResource AppFont}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
         Deactivated="Window_Deactivated">
     <Window.Resources>
+        <!-- Tag = 아이콘 Geometry -->
         <Style x:Key="TrayMenuItemStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="#2A3548" />
+            <Setter Property="Foreground" Value="#1C1B19" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Height" Value="40" />
-            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Height" Value="38" />
             <Setter Property="Padding" Value="12,0" />
-            <Setter Property="FontSize" Value="13.5" />
-            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bd"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="10"
+                                CornerRadius="8"
                                 Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Viewbox Width="16" Height="16" Margin="0,0,10,0">
+                                    <Path Style="{StaticResource IconPath}"
+                                          Data="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Stroke="{TemplateBinding Foreground}" />
+                                </Viewbox>
+                                <ContentPresenter VerticalAlignment="Center" />
+                            </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#E8EDF3" />
+                                <Setter TargetName="Bd" Property="Background" Value="#F1F0EC" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -43,23 +52,26 @@
     </Window.Resources>
 
     <Border Margin="12"
-            Background="#FBFCFD"
-            BorderBrush="#D5DDE6"
+            Background="#FFFFFF"
+            BorderBrush="#E6E4DE"
             BorderThickness="1"
-            CornerRadius="16"
+            CornerRadius="12"
             Width="196">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="22"
-                              ShadowDepth="2"
-                              Opacity="0.18"
-                              Color="#2A3548" />
+            <DropShadowEffect BlurRadius="24"
+                              ShadowDepth="6"
+                              Direction="270"
+                              Opacity="0.16"
+                              Color="#1C1B19" />
         </Border.Effect>
-        <StackPanel Margin="8">
+        <StackPanel Margin="6">
             <Button Style="{StaticResource TrayMenuItemStyle}"
+                    Tag="{StaticResource IconEye}"
                     Content="GUI 보이기"
                     Click="ShowGui_Click" />
             <Button Style="{StaticResource TrayMenuItemStyle}"
-                    Foreground="#B07A7A"
+                    Tag="{StaticResource IconPower}"
+                    Foreground="#B42318"
                     Content="종료하기"
                     Click="Exit_Click" />
         </StackPanel>

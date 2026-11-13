@@ -33,6 +33,8 @@ internal static class Program
             Run("실제 설치기 압축 해제·업데이트 덮어쓰기·트레이 인자", InstallerSmoke);
             return _failed == 0 ? 0 : 1;
         }
+        Run("첨부파일 저장·실패·취소·파일명", MailAttachmentTests.Verify);
+        Run("첨부 전체 다운로드·중복 이름·일부 실패·취소", MailAttachmentTests.VerifyBatch);
         Run("메일 상세 조회·헤더·본문·오류·취소", MailBodyTests.Verify);
         Run("받은메일 응답·서명·페이지·취소", MailTests.Verify);
         Run("조용한 업데이트의 경로·인자 검증", SilentUpdateArguments);
@@ -55,8 +57,10 @@ internal static class Program
         Run("신청서 HTML과 텍스트 원문 표시", ApplicationHtml);
         Run("실제 대시보드 XAML 체크박스와 화면 렌더링", DashboardLayout);
         Run("받은메일 목록 실제 XAML 레이아웃", MailTests.Layout);
+        Run("메일 단일 창 전환·목록 복귀·설정·로그아웃", MailTests.EmbeddedNavigation);
         Run("업데이트 팝업 좌측 체크박스와 취소·초기화", UpdateDialog);
         Run("명시적 트레이 시작의 WPF 창 숨김", TrayWindow);
+        Run("토스트 알림 시간·쌓기·맨 위 표시·x 닫기", ToastNotification);
         Console.WriteLine($"RESULT: {_passed} passed, {_failed} failed");
         return _failed == 0 ? 0 : 1;
     }
@@ -418,6 +422,7 @@ internal static class Program
             Assert(((MissingPeriodViewModel)checkBox.DataContext).IsNotificationSnoozed, "실제 XAML 바인딩이 체크를 저장해야 합니다.");
             checkBox.SetCurrentValue(ToggleButton.IsCheckedProperty, false);
         }
+        SavePreview(page, 886, 753, "dashboard-preview.png");
         var deleteButtons = Descendants<Button>(page).Where(button => Equals(button.Content, "삭제")).ToArray();
         Assert(deleteButtons.Length == 3, "각 목록 카드에 삭제 버튼이 있어야 합니다.");
         foreach (var button in deleteButtons)
@@ -427,11 +432,80 @@ internal static class Program
             Assert(item.IsDismissed, "실제 삭제 버튼으로 영구 제외해야 합니다.");
         }
         Assert(dashboard.IsAllClear, "삭제 후 화면 집계를 갱신해야 합니다.");
-        var bitmap = new RenderTargetBitmap(886, 753, 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(page);
+        page.UpdateLayout();
+        SavePreview(page, 886, 753, "dashboard-allclear-preview.png");
+    }
+
+    private static void ToastNotification()
+    {
+        // 표시 시간: 40자까지 6초, 이후 12자마다 1초, 최대 20초. 공백은 세지 않음
+        Assert(ToastWindow.DurationFor("업데이트 확인", "지금 쓰는 버전이 최신입니다.") == TimeSpan.FromSeconds(6), "짧은 알림은 6초 동안 보여야 합니다.");
+        Assert(ToastWindow.DurationFor(null, new string('가', 100)) == TimeSpan.FromSeconds(11), "긴 알림은 글자 수만큼 연장해야 합니다.");
+        Assert(ToastWindow.DurationFor(null, new string('가', 1000)) == TimeSpan.FromSeconds(20), "아무리 길어도 20초를 넘으면 안 됩니다.");
+        Assert(ToastWindow.DurationFor(null, new string(' ', 500)) == TimeSpan.FromSeconds(6), "공백은 글자 수에 넣지 않습니다.");
+
+        var owner = new Window
+        {
+            Width = 900, Height = 600, Left = 120, Top = 80, WindowStartupLocation = WindowStartupLocation.Manual,
+            Opacity = 0, ShowActivated = false, ShowInTaskbar = false
+        };
+        owner.Show();
+        try
+        {
+            ToastWindow first = Toast.Info(owner, "삭제 상태를 저장하지 못했습니다.", "목록에서 삭제")!;
+            ToastWindow second = Toast.Warning(owner, "업데이트를 받지 못했습니다. " + string.Join(" ", Enumerable.Repeat("서버 응답이 없습니다.", 30)), "업데이트")!;
+            Pump(300);
+            Assert(Toast.Open.Count == 2 && first.Owner == owner && second.Owner == owner && !first.Topmost && !first.ShowActivated,
+                "창이 보일 때는 메인 창이 소유한(항상 그 위에 그려지는) 알림이어야 하고 포커스를 빼앗으면 안 됩니다.");
+            Assert(second.DisplayDuration == ToastWindow.MaximumDuration, "긴 오류 문구는 최대 20초까지 보여야 합니다.");
+            Assert(second.Left + second.Width <= owner.Left + owner.ActualWidth + 0.5 && second.Top + second.ActualHeight <= owner.Top + owner.ActualHeight + 0.5
+                && second.Left > owner.Left && first.Top + first.ActualHeight <= second.Top + 12,
+                "알림은 창 오른쪽 아래에 뜨고, 새 알림이 아래·이전 알림이 그 위로 쌓여야 합니다.");
+            Assert(first.Opacity > 0.9, "나타나는 동작이 끝나면 불투명해야 합니다.");
+            SavePreview((FrameworkElement)first.Content, (int)first.Width, (int)first.ActualHeight, "toast-preview.png");
+            SavePreview((FrameworkElement)second.Content, (int)second.Width, (int)second.ActualHeight, "toast-long-preview.png");
+
+            double secondTop = second.Top;
+            ((Button)first.FindName("CloseButton")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            Assert(first.IsDismissing && first.IsVisible, "x를 누르면 바로 사라지는 동작이 시작되어야 합니다.");
+            Pump(600);
+            Assert(!Toast.Open.Contains(first) && !first.IsVisible && Toast.Open.Count == 1 && Math.Abs(second.Top - secondTop) < 0.5,
+                "사라지는 동작이 끝나면 창을 닫고, 남은 알림 위치는 유지해야 합니다.");
+
+            owner.Left += 40;
+            Pump(100);
+            Assert(second.Left + second.Width <= owner.Left + owner.ActualWidth + 0.5, "창을 옮기면 알림도 따라가야 합니다.");
+
+            ToastWindow floating = Toast.Info(new Window(), "트레이에 있을 때 알림")!;
+            Assert(floating.Owner == null && floating.Topmost, "메인 창이 숨어 있으면 화면 맨 위에 띄워야 합니다.");
+            Toast.DismissAll();
+            Pump(600);
+            Assert(Toast.Open.Count == 0, "모두 닫기 후 남은 알림이 없어야 합니다.");
+        }
+        finally
+        {
+            foreach (ToastWindow toast in Toast.Open.ToArray()) toast.Close();
+            owner.Close();
+        }
+    }
+
+    /// <summary>애니메이션·타이머가 진행되도록 지정한 시간 동안 메시지 루프를 돌립니다.</summary>
+    private static void Pump(int milliseconds)
+    {
+        var frame = new DispatcherFrame();
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(milliseconds) };
+        timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; };
+        timer.Start();
+        Dispatcher.PushFrame(frame);
+    }
+
+    private static void SavePreview(FrameworkElement element, int width, int height, string fileName)
+    {
+        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(element);
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        string path = Path.Combine(AppContext.BaseDirectory, "test-data", "dashboard-preview.png");
+        string path = Path.Combine(AppContext.BaseDirectory, "test-data", fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         using (FileStream stream = File.Create(path)) encoder.Save(stream);
         Console.WriteLine("PREVIEW " + path);
@@ -586,6 +660,9 @@ internal static class Program
                 string rendered = await core.ExecuteScriptAsync("document.body.innerText.includes('2026년 9월 20일 원문') && !!document.querySelector('table') && window.testInjected !== true");
                 Assert(rendered == "true", "실제 WebView2가 원문 표를 표시하고 본문 스크립트를 실행하지 않아야 합니다.");
                 Assert(window.Title == "신청서 보기" && (core.Source == "about:blank" || core.Source.StartsWith("data:text/html", StringComparison.OrdinalIgnoreCase)), "ERP 작성 화면으로 이동하면 안 됩니다.");
+                bool fontLoaded = new Typeface(window.FontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal).TryGetGlyphTypeface(out GlyphTypeface glyphs)
+                    && glyphs.FamilyNames.Values.Contains("IBM Plex Sans KR");
+                Assert(fontLoaded, "신청서 창은 앱 리소스 없이도 내장 글꼴을 찾아야 합니다.");
                 Assert(typeof(ReportBrowserWindow).GetField("_fill", Private)!.GetValue(window) == null, "신청서 보기에 초안 입력 값이 없어야 합니다.");
                 var blocked = new TaskCompletionSource<bool>();
                 core.NavigationStarting += (_, e) =>

@@ -1,0 +1,103 @@
+<Window x:Class="Amaranth10API.Views.ToastWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="아맛다보고서 알림"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Focusable="False"
+        ResizeMode="NoResize"
+        SizeToContent="Height"
+        Width="404"
+        WindowStartupLocation="Manual"
+        Opacity="0"
+        FontFamily="../Assets/Fonts/#IBM Plex Sans KR, Segoe UI"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display">
+    <!--
+        토스트 알림. 메인 창이 소유한 별도 창이라 메일 본문(WebView2)보다도 항상 위에 보입니다.
+        앱 리소스 없이도 뜰 수 있게 색을 직접 적습니다. (색 기준: docs/redesign/REDESIGN.md)
+    -->
+    <Window.Resources>
+        <Style x:Key="ToastCloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Foreground" Value="#9A978F" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="7" Background="Transparent">
+                            <Viewbox Width="10" Height="10">
+                                <Path Width="24" Height="24" Stretch="None" StrokeThickness="2.6"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}"
+                                      Data="M5,5 L19,19 M19,5 L5,19" />
+                            </Viewbox>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#3A3935" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- 그림자가 잘리지 않도록 바깥 여백을 둡니다 -->
+    <Grid x:Name="Root" Margin="12,8,12,16">
+        <Grid.RenderTransform>
+            <TranslateTransform x:Name="Slide" Y="10" />
+        </Grid.RenderTransform>
+        <Border x:Name="Card" Background="#1C1B19" CornerRadius="12">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="270" Opacity="0.22" Color="#000000" />
+            </Border.Effect>
+            <Grid>
+                <Grid Margin="16,14,10,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="22" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 종류 아이콘 -->
+                    <Border x:Name="IconBadge" Width="22" Height="22" CornerRadius="11" Background="#5847C9"
+                            VerticalAlignment="Top" Margin="0,1,0,0">
+                        <Viewbox Width="12" Height="12">
+                            <Path x:Name="IconPath" Width="24" Height="24" Stretch="None" Stroke="#FFFFFF" StrokeThickness="3"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  Data="M12,11 L12,17 M12,7 L12,7.5" />
+                        </Viewbox>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Margin="12,0,8,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="TitleText" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF"
+                                   TextTrimming="CharacterEllipsis" Margin="0,2,0,3" />
+                        <TextBlock x:Name="MessageText" FontSize="13" Foreground="#D9D6CE" TextWrapping="Wrap"
+                                   LineHeight="20" MaxHeight="240" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+
+                    <Button x:Name="CloseButton" Grid.Column="2" VerticalAlignment="Top"
+                            Style="{StaticResource ToastCloseButtonStyle}" ToolTip="닫기" Click="CloseButton_Click" />
+                </Grid>
+
+                <!-- 남은 시간 (마우스를 올리면 멈춤) -->
+                <Border VerticalAlignment="Bottom" Height="3" Margin="12,0,12,0" ClipToBounds="True">
+                    <Rectangle x:Name="ProgressBar" Height="3" RadiusX="1.5" RadiusY="1.5" Fill="#5847C9" Opacity="0.85"
+                               RenderTransformOrigin="0,0.5">
+                        <Rectangle.RenderTransform>
+                            <ScaleTransform x:Name="ProgressScale" ScaleX="1" />
+                        </Rectangle.RenderTransform>
+                    </Rectangle>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

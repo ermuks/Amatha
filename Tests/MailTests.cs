@@ -66,15 +66,79 @@ internal static class MailTests
     }
     public static void Layout()
     {
-        var window = new MailWindow(new AmaranthClient(), new AmaranthSession());
+        var window = new MailView(new AmaranthClient(), new AmaranthSession());
         var grid = (DataGrid)window.FindName("MailGrid");
         grid.ItemsSource = AmaranthClient.ParseInboxResponse(Fixture, 1, 100).Items;
         var content = (FrameworkElement)window.Content;
         content.Measure(new Size(1000, 640)); content.Arrange(new Rect(0, 0, 1000, 640)); content.UpdateLayout();
-        Check(grid.Items.Count == 2 && grid.Columns.Count == 5 && grid.IsReadOnly, "메일 목록 XAML 렌더링 오류");
+        // DataGrid의 * 열 폭은 첫 배치 뒤에 정해지므로 화면 밖 렌더링에서는 한 번 더 배치합니다.
+        content.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() => { }));
+        content.InvalidateMeasure(); content.Measure(new Size(1000, 640)); content.Arrange(new Rect(0, 0, 1000, 640)); content.UpdateLayout();
+        Check(grid.Items.Count == 2 && grid.Columns.Count == 2 && grid.IsReadOnly, "메일 목록 XAML 렌더링 오류");
+        // 2단 화면: 왼쪽 목록(300~560) 오른쪽에 본문 칸이 있고, 아무것도 고르지 않았으면 안내 문구를 보여 줍니다.
+        var list = (FrameworkElement)window.FindName("ListPanel");
+        var empty = (FrameworkElement)window.FindName("EmptyBodyPanel");
+        Check(grid.Columns[1].ActualWidth > 250, "목록 행이 보낸 사람·제목을 보여 줄 폭을 가져야 함");
+        Check(list.ActualWidth >= 270 && list.ActualWidth <= 560 && empty.Visibility == Visibility.Visible
+            && empty.TranslatePoint(new Point(0, 0), content).X > list.ActualWidth
+            && ((FrameworkElement)window.FindName("BodyHost")).Visibility == Visibility.Collapsed, "목록 오른쪽에 본문 칸(선택 전 안내)이 있어야 함");
+        // 미리보기에 선택 행 강조가 보이도록 두 번째 메일을 고른 상태로 찍습니다.
+        grid.SelectedIndex = 1;
+        content.UpdateLayout();
+        var selectedRow = (DataGridRow)grid.ItemContainerGenerator.ContainerFromIndex(1);
+        Check(selectedRow.Background is SolidColorBrush selectedBrush && selectedBrush.Color == (Color)ColorConverter.ConvertFromString("#F2F0FB"),
+            "선택한 메일 행을 강조해야 함 (IsSelected=" + selectedRow.IsSelected + ", Background=" + selectedRow.Background + ", Source="
+            + DependencyPropertyHelper.GetValueSource(selectedRow, Control.BackgroundProperty).BaseValueSource + ")");
         var bitmap = new RenderTargetBitmap(1000, 640, 96, 96, PixelFormats.Pbgra32); bitmap.Render(content);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using (var file = File.Create(Path.Combine(AppContext.BaseDirectory, "test-data", "mail-preview.png"))) encoder.Save(file);
-        window.Close();
+        window.Dispose();
+    }
+
+    public static void EmbeddedNavigation()
+    {
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        var previousBalloon = Amaranth10API.Helpers.WindowsNotification.TrayBalloon;
+        var shell = new MainWindow();
+        try
+        {
+            Amaranth10API.Helpers.AppRuntime.Current.Session = new AmaranthSession();
+            int windows = Application.Current.Windows.Count;
+            typeof(MainWindow).GetMethod("EmailList_Click", flags)!.Invoke(shell, new object[] { shell, new RoutedEventArgs() });
+            var host = (ContentControl)shell.FindName("MailHost");
+            var view = (MailView)host.Content;
+            Check(host.Visibility == Visibility.Visible && Application.Current.Windows.Count == windows, "메일 메뉴는 메인 창에 표시되어야 함");
+            var grid = (DataGrid)view.FindName("MailGrid");
+            var items = AmaranthClient.ParseInboxResponse(Fixture, 2, 100).Items;
+            grid.ItemsSource = items; grid.SelectedItem = items[1];
+            typeof(MailView).GetMethod("OpenMail", flags)!.Invoke(view, new object[] { items[1] });
+            var bodyHost = (ContentControl)view.FindName("BodyHost");
+            var body = (MailBodyView)bodyHost.Content;
+            Check(bodyHost.Visibility == Visibility.Visible && Application.Current.Windows.Count == windows, "본문도 새 창 없이 표시되어야 함");
+            Check(((FrameworkElement)view.FindName("ListPanel")).Visibility == Visibility.Visible
+                && ((FrameworkElement)view.FindName("EmptyBodyPanel")).Visibility == Visibility.Collapsed, "본문을 열어도 목록은 왼쪽에 계속 보여야 함");
+            typeof(MailView).GetMethod("OpenMail", flags)!.Invoke(view, new object[] { items[0] });
+            Check(ReferenceEquals(bodyHost.Content, body) && body.MailId == items[0].Id, "다른 메일은 같은 본문 칸(같은 웹뷰어)에서 열어야 함");
+            ((Button)body.FindName("BackButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(bodyHost.Content == null && ((FrameworkElement)view.FindName("EmptyBodyPanel")).Visibility == Visibility.Visible
+                && ReferenceEquals(grid.ItemsSource, items) && ReferenceEquals(grid.SelectedItem, items[1]), "본문 닫기 후 안내 표시, 데이터와 선택 유지");
+            Check((bool)typeof(MailBodyView).GetField("_closed", flags)!.GetValue(body)!, "복귀한 본문 리소스 해제");
+            typeof(MainWindow).GetMethod("ShowDashboard", flags)!.Invoke(shell, null);
+            Check(host.Visibility == Visibility.Collapsed, "미작성 목록으로 전환");
+            typeof(MainWindow).GetMethod("EmailList_Click", flags)!.Invoke(shell, new object[] { shell, new RoutedEventArgs() });
+            Check(ReferenceEquals(host.Content, view) && ReferenceEquals(grid.SelectedItem, items[1]), "메일 재진입 상태 유지");
+            typeof(MainWindow).GetMethod("Settings_Click", flags)!.Invoke(shell, new object[] { shell, new RoutedEventArgs() });
+            Check(host.Visibility == Visibility.Collapsed, "설정 화면이 웹뷰어에 가려지면 안 됨");
+            typeof(MainWindow).GetMethod("EmailList_Click", flags)!.Invoke(shell, new object[] { shell, new RoutedEventArgs() });
+            Check(host.Visibility == Visibility.Visible, "설정에서 메일 복귀");
+            shell.NavigateToLogin();
+            Check(host.Content == null && (bool)typeof(MailView).GetField("_closed", flags)!.GetValue(view)!, "로그아웃 시 메일 리소스 해제");
+        }
+        finally
+        {
+            typeof(MainWindow).GetField("_forceClose", flags)!.SetValue(shell, true);
+            shell.Close();
+            Amaranth10API.Helpers.WindowsNotification.TrayBalloon = previousBalloon;
+        }
     }
 }
