@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <Resource Include="Assets\AppIcon.ico" />
+    <Resource Include="Assets\Logo.png" />
     <!-- v1.14.0 리디자인 폰트 (SIL OFL 1.1, Assets\Fonts\OFL.txt) -->
     <Resource Include="Assets\Fonts\*.ttf" />
   </ItemGroup>

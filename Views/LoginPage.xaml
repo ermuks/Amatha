@@ -11,10 +11,11 @@
                 <StackPanel>
                     <!-- 로고 -->
                     <StackPanel Orientation="Horizontal">
-                        <Border Width="36" Height="36" CornerRadius="10" Background="{StaticResource AccentFillBrush}">
-                            <Viewbox Width="20" Height="20">
-                                <Path Style="{StaticResource IconPath}" Data="{StaticResource IconLogo}" Stroke="White" StrokeThickness="2" />
-                            </Viewbox>
+                        <Border Width="38" Height="38" CornerRadius="10" BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
+                                RenderOptions.BitmapScalingMode="HighQuality">
+                            <Border.Background>
+                                <ImageBrush ImageSource="../Assets/Logo.png" Stretch="UniformToFill" />
+                            </Border.Background>
                         </Border>
                         <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" FontSize="18" FontWeight="Bold"
                                    Foreground="{StaticResource InkBrush}" Text="아맛다보고서" />

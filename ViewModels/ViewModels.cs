@@ -306,7 +306,7 @@ public sealed class DashboardViewModel : ObservableObject
     {
         get
         {
-            if (OverdueReportCount > 0 || SubstituteIssueCount > 0) return "항목을 누르면 신청서를 열고 보고서 작성을 시작할 수 있어요.";
+            if (OverdueReportCount > 0 || SubstituteIssueCount > 0) return "항목을 누르면 연결된 신청서를 볼 수 있어요.";
             if (TotalCount > 0) return "일정이 끝나면 작성 알림을 보내드릴게요.";
             return "새 일정이 끝나면 다시 알려드릴게요.";
         }

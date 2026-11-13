@@ -29,10 +29,13 @@
             <DockPanel LastChildFill="False">
                 <!-- 로고 -->
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,22">
-                    <Border Width="32" Height="32" CornerRadius="9" Background="{StaticResource AccentFillBrush}">
-                        <Viewbox Width="18" Height="18">
-                            <Path Style="{StaticResource IconPath}" Data="{StaticResource IconLogo}" Stroke="White" StrokeThickness="2" />
-                        </Viewbox>
+                    <!-- 캐릭터 얼굴(앱 아이콘 작은 크기와 같은 구도)을 흰 둥근 타일에 -->
+                    <Border Width="34" Height="34" CornerRadius="9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
+                            RenderOptions.BitmapScalingMode="HighQuality">
+                        <Border.Background>
+                            <!-- '/'로 시작하면 실행 중인 exe 기준이 되어 테스트에서 못 찾음 → XAML 기준 상대 경로 -->
+                            <ImageBrush ImageSource="Assets/Logo.png" Stretch="UniformToFill" />
+                        </Border.Background>
                     </Border>
                     <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" FontSize="16" FontWeight="Bold"
                                Foreground="{StaticResource InkBrush}" Text="아맛다보고서" />

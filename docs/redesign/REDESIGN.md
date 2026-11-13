@@ -237,10 +237,17 @@
 
 - **같은 창에서 보기**: 사이드바 "사용자 매뉴얼"이 이동 메뉴(`NavManual`, RadioButton)가 되고, 별도 `ManualWindow` 대신 `Views/ManualView`(WebView2)를 메인 창 `ManualHost`에 띄웁니다. 메일처럼 환경설정·확인 팝업이 뜨면 숨기고(`UpdateContentVisibility`), 다른 메뉴에 갔다 와도 읽던 위치를 유지, 로그아웃 시 해제. 매뉴얼 밖 링크는 기본 브라우저로. WebView2는 둥근 모서리로 잘리지 않아 위·아래 16px를 띄움.
 - **매뉴얼 디자인**: `docs/사용매뉴얼.html`을 새 팔레트(흰 바탕·보라 `#5847C9`·IBM Plex Sans KR)로 바꾸고 목차 알약을 추가. 메일 2단 화면·토스트 알림·바로 저장되는 환경설정·사이드바 업데이트 안내에 맞게 글을 고침. 섹션: 1 로그인 · 2 미작성 목록 · 3 보고서 작성 · 4 메일 · 5 메뉴·환경설정 · 6 트레이·종료 · 7 알림 · 8 업데이트.
-- **새 화면 그림**: `01-login`, `02-dashboard`, `04-mail`(새, 옛 `04-menu` 삭제), `05-settings`, `06-tray`, `07-exit`. `03-report`는 ERP 화면이라 그대로.
-  - 찍는 법: `Tests\bin\Release\net48\Amaranth10API.Tests.exe --manual-shots <폴더>` — 실제 창을 띄우되 **자동 로그인을 끄고 ERP 연결을 가짜 응답으로 바꿔** 가상 데이터(김하늘 · 디지털트윈팀 등)만 씀. PrintWindow로 WebView2까지 찍고, 요소 위치를 `rects.txt`로 남김.
+- **새 화면 그림**: `01-login`, `02-dashboard`, `03-application`(신청서 보기 창, 1.16.1), `04-mail`(옛 `04-menu` 삭제), `05-settings`, `06-tray`, `07-exit`. (1.16.1에서 ERP 보고서 작성 화면 `03-report`는 뺌 — 이 프로그램에는 보고서 작성 기능이 없음)
+  - 찍는 법: `Tests\bin\Release\net48\Amaranth10API.Tests.exe --manual-shots <폴더>` — 실제 창을 띄우되 **자동 로그인을 끄고 ERP 연결을 가짜 응답으로 바꿔** 가상 데이터(김테이아 · 디지털트윈팀 등)만 씀. PrintWindow로 WebView2까지 찍고, 요소 위치를 `rects.txt`로 남김.
   - 넣는 법: `python docs/tools/update_manual_shots.py <폴더>` — PNG를 `docs/images/`로 복사하고, 매뉴얼의 `shot:이름` 표시 사이를 그림 + 빨간 번호 상자 + 설명 목록으로 다시 씀(번호 위치는 `rects.txt`에서 계산하므로 화면이 바뀌어도 따라감).
 - 함께 고친 것: 로그인 카드의 안내 문장이 한 글자만 다음 줄로 넘어가던 문제(줄바꿈 위치 지정).
+
+### 4.11 앱 안 로고 · 문구 (1.16.1)
+
+- 사이드바(34px)와 로그인 카드(38px)의 보라 사각형 + 문서 아이콘을 **캐릭터 얼굴**(앱 아이콘 작은 크기와 같은 구도)로 바꿈. `Assets/Logo.png`(128px, 흰 바탕)를 테두리 `#E6E4DE`·라운드 9~10 타일의 `ImageBrush`로 채움. 클로즈업이 잘린 가장자리가 타일 모서리와 맞아 프로필 사진처럼 보임.
+  - 경로는 XAML 기준 상대 경로(`Assets/Logo.png`, `../Assets/Logo.png`). `/`로 시작하면 실행 중인 exe 기준이 되어 테스트·화면 찍기에서 리소스를 못 찾음.
+- **보고서 작성 기능은 없음**: 배너 "항목을 누르면 신청서를 열고 보고서 작성을 시작할 수 있어요" → "항목을 누르면 연결된 신청서를 볼 수 있어요." 매뉴얼 3장은 "신청서 확인"으로 바꾸고, 보고서는 ERP에서 직접 작성·상신한다고 안내.
+- 매뉴얼 그림의 가상 사용자 이름: **김테이아** (`teia.kim@example.com`).
 
 ### 4.6 그 밖
 

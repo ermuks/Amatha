@@ -64,6 +64,10 @@ internal static class ManualScreenshots
             }
         }));
         Dispatcher.PushFrame(frame);
+        // 닫은 WebView2들이 CLR 종료 과정의 COM 정리에서 예외를 내므로(Environment.Exit도 마찬가지),
+        // 결과를 다 쓴 뒤 정리 단계를 건너뛰고 종료 코드만 남긴 채 바로 끝냅니다. 화면 찍기 전용 모드라 괜찮습니다.
+        Console.Out.Flush();
+        Native.TerminateProcess(Native.GetCurrentProcess(), (uint)result);
         return result;
     }
 
@@ -73,7 +77,7 @@ internal static class ManualScreenshots
         var session = new AmaranthSession
         {
             AuthToken = "fixture", HashKey = "fixture-key", CompanySequence = "company-1", EmployeeSequence = "employee-1",
-            EmployeeName = "김하늘", DepartmentName = "디지털트윈팀"
+            EmployeeName = "김테이아", DepartmentName = "디지털트윈팀"
         };
 
         var window = new MainWindow();
@@ -115,6 +119,9 @@ internal static class ManualScreenshots
             var deletes = Descendants<Button>(page).Where(b => Equals(b.Content, "삭제")).ToList();
             for (int i = 0; i < Math.Min(3, checks.Count); i++) Mark(window, "02-dashboard", "snooze" + i, checks[i]);
             for (int i = 0; i < Math.Min(3, deletes.Count); i++) Mark(window, "02-dashboard", "delete" + i, deletes[i]);
+
+            // 2-1. 신청서 보기 (항목을 누르면 열리는 창, 가상 신청서)
+            await CaptureApplicationAsync();
 
             // 3. 메일 (2단: 왼쪽 목록 + 오른쪽 본문)
             string profile = Path.Combine(AppContext.BaseDirectory, "test-data", "manual-webview-" + Guid.NewGuid().ToString("N"));
@@ -197,6 +204,51 @@ internal static class ManualScreenshots
             typeof(MainWindow).GetField("_forceClose", Private)!.SetValue(window, true);
             window.Close();
             Toast.DismissAll();
+        }
+    }
+
+    private static async Task CaptureApplicationAsync()
+    {
+        string profile = Path.Combine(AppContext.BaseDirectory, "test-data", "manual-report-" + Guid.NewGuid().ToString("N"));
+        typeof(ReportBrowserWindow).GetField("SharedEnvironment", BindingFlags.NonPublic | BindingFlags.Static)!
+            .SetValue(null, await CoreWebView2Environment.CreateAsync(null, profile));
+
+        DateTime start = DateTime.Today.AddDays(9), end = DateTime.Today.AddDays(13);
+        string Day(DateTime d) => $"{d.Year}년 {d.Month}월 {d.Day}일";
+        string th = "style=\"background:#f3f5f8;padding:8px 10px;border:1px solid #c9d1db;width:16%;text-align:center;font-weight:600\"";
+        string td = "style=\"padding:8px 10px;border:1px solid #c9d1db\"";
+        string contents =
+            "<h2 style=\"text-align:center;margin:8px 0 18px;font-size:22px\">출장신청서</h2>" +
+            "<table style=\"border-collapse:collapse;width:100%;font-size:13px\">" +
+            $"<tr><th {th}>문서번호</th><td {td}>TEIA-2026-1107</td><th {th}>기안일</th><td {td}>{Day(DateTime.Today.AddDays(-2))}</td></tr>" +
+            $"<tr><th {th}>기안자</th><td {td}>김테이아</td><th {th}>부서</th><td {td}>디지털트윈팀</td></tr>" +
+            $"<tr><th {th}>출장구분</th><td {td}>해외출장</td><th {th}>숙박</th><td {td}>숙박</td></tr>" +
+            $"<tr><th {th}>출장기간</th><td {td} colspan=\"3\">{Day(start)} ~ {Day(end)} (5일)</td></tr>" +
+            $"<tr><th {th}>출장지</th><td {td} colspan=\"3\">해외 전시회장</td></tr>" +
+            $"<tr><th {th}>출장목적</th><td {td} colspan=\"3\">해외 전시회 참관 및 기술 동향 조사</td></tr>" +
+            $"<tr><th {th}>동행자</th><td {td} colspan=\"3\">없음</td></tr>" +
+            "</table>";
+        var document = new BusinessTripDocument
+        {
+            Title = "[출장신청] 해외 전시회 참관", DocumentNumber = "TEIA-2026-1107", DocumentStatus = "종결",
+            TripStartDate = start, TripEndDate = end, DocContents = contents
+        };
+
+        var window = new ReportBrowserWindow(new AmaranthSession(), applicationDocument: document)
+        {
+            WindowStartupLocation = WindowStartupLocation.Manual, Left = 80, Top = 60, Width = 1000, Height = 680, ShowActivated = true
+        };
+        window.Show();
+        try
+        {
+            await Settle(3500);
+            Capture(window, "03-application.png");
+            Mark(window, "03-application", "address", (FrameworkElement)window.FindName("AddressBox"));
+            Mark(window, "03-application", "content", (FrameworkElement)window.FindName("BrowserHost"));
+        }
+        finally
+        {
+            window.Close();
         }
     }
 
@@ -285,7 +337,7 @@ internal static class ManualScreenshots
             {
                 long id = long.Parse(Regex.Match(body, "\"uid\"\\s*:\\s*\"?(\\d+)").Groups[1].Value, CultureInfo.InvariantCulture);
                 var mail = Mails.First(m => m.Id == id);
-                string html = "<p>김하늘 님,</p><p>신청하신 해외출장이 최종 승인되었습니다.</p><p>· 기간: 해외 전시회 참관 일정<br>· 소속: 디지털트윈팀</p><p>출장이 끝나면 출장 보고서를 제출해 주세요.</p>";
+                string html = "<p>김테이아 님,</p><p>신청하신 해외출장이 최종 승인되었습니다.</p><p>· 기간: 해외 전시회 참관 일정<br>· 소속: 디지털트윈팀</p><p>출장이 끝나면 출장 보고서를 제출해 주세요.</p>";
                 var files = mail.Attach
                     ? new object[]
                     {
@@ -302,9 +354,9 @@ internal static class ManualScreenshots
                         mime = new { body = new { html, plain = "" }, fileList = files },
                         decodeMime = new
                         {
-                            subject = mail.Subject, from = mail.Name + " &lt;" + mail.Email + "&gt;", to = "김하늘 &lt;haneul.kim@example.com&gt;",
+                            subject = mail.Subject, from = mail.Name + " &lt;" + mail.Email + "&gt;", to = "김테이아 &lt;teia.kim@example.com&gt;",
                             date = DateTime.Now.AddMinutes(-mail.AgoMinutes).ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
-                            email = "haneul.kim@example.com", empSeq = "employee-1"
+                            email = "teia.kim@example.com", empSeq = "employee-1"
                         }
                     }
                 });
@@ -449,5 +501,7 @@ internal static class ManualScreenshots
         [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out Rect rect);
         [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr hWnd, IntPtr hdc, uint flags);
         [DllImport("dwmapi.dll")] public static extern int DwmGetWindowAttribute(IntPtr hwnd, int attribute, out Rect value, int size);
+        [DllImport("kernel32.dll")] public static extern IntPtr GetCurrentProcess();
+        [DllImport("kernel32.dll")] public static extern bool TerminateProcess(IntPtr process, uint exitCode);
     }
 }

@@ -38,7 +38,7 @@ public partial class DashboardPage : Page
 
     private void NotificationSnooze_Click(object sender, RoutedEventArgs e)
     {
-        // 체크박스 클릭이 카드의 보고서 작성 버튼으로 전달되지 않도록 합니다.
+        // 체크박스 클릭이 행의 신청서 열기 버튼으로 전달되지 않도록 합니다.
         e.Handled = true;
     }
 
