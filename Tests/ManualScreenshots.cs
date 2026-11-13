@@ -140,6 +140,19 @@ internal static class ManualScreenshots
             for (int i = 0; i < Math.Min(3, checks.Count); i++) Mark(window, "02-dashboard", "snooze" + i, checks[i]);
             for (int i = 0; i < Math.Min(3, deletes.Count); i++) Mark(window, "02-dashboard", "delete" + i, deletes[i]);
 
+            // 2-0. 미작성 목록 아래쪽 (교육 보고서·대체휴가 섹션)
+            ScrollViewer? pageScroll = Descendants<ScrollViewer>(page).FirstOrDefault();
+            if (pageScroll != null)
+            {
+                pageScroll.ScrollToEnd();
+                await Settle(500);
+                Capture(window, "02-dashboard-bottom.png");
+                var educationRow = Descendants<Button>(page).FirstOrDefault(b => b.DataContext is MissingPeriodViewModel m && m.TileKind == "education");
+                Mark(window, "02-dashboard-bottom", "education-row", educationRow);
+                pageScroll.ScrollToHome();
+                await Settle(300);
+            }
+
             // 2-1. 신청서 보기 (항목을 누르면 열리는 창, 가상 신청서)
             await CaptureApplicationAsync();
 
@@ -301,6 +314,13 @@ internal static class ManualScreenshots
             DocumentId = 201, Title = "[휴일근무신청] 서버 점검 대응", DocumentNumber = "HOLI-201", DocumentStatus = "종결",
             TripStartDate = holiday, TripEndDate = holiday, StartTime = "09:00", EndTime = "15:00",
             WorkDays = new() { new HolidayWorkDay { WorkDate = holiday, StartTime = "09:00", EndTime = "15:00" } }
+        });
+
+        // 교육: 끝난 지 6일 된 사외교육 (교육결과보고서 없음)
+        client.EducationApplications.Add(new BusinessTripDocument
+        {
+            DocumentId = 301, Title = "[사외교육신청서] 디지털트윈팀 김테이아 (Unity Industry 기술 세미나)", DocumentNumber = "EDU-301",
+            DocumentStatus = "종결", TripStartDate = today.AddDays(-6), TripEndDate = today.AddDays(-6)
         });
 
         DateTime substitute = today.AddDays(-16);

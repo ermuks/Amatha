@@ -33,15 +33,16 @@ public static class WindowsNotification
         int holidayCount,
         int substituteCount = 0,
         int substituteTimeCount = 0,
-        bool showGui = false)
+        bool showGui = false,
+        int educationCount = 0)
     {
-        if (tripCount <= 0 && holidayCount <= 0 && substituteCount <= 0 && substituteTimeCount <= 0)
+        if (tripCount <= 0 && holidayCount <= 0 && substituteCount <= 0 && substituteTimeCount <= 0 && educationCount <= 0)
         {
             return;
         }
 
-        string title = FormatTitle(tripCount, holidayCount, substituteCount, substituteTimeCount);
-        string body = FormatBody(tripCount, holidayCount, substituteCount, substituteTimeCount);
+        string title = FormatTitle(tripCount, holidayCount, substituteCount, substituteTimeCount, educationCount);
+        string body = FormatBody(tripCount, holidayCount, substituteCount, substituteTimeCount, educationCount);
 
         void Show()
         {
@@ -106,9 +107,9 @@ public static class WindowsNotification
         }
     }
 
-    private static string FormatTitle(int tripCount, int holidayCount, int substituteCount, int substituteTimeCount)
+    private static string FormatTitle(int tripCount, int holidayCount, int substituteCount, int substituteTimeCount, int educationCount = 0)
     {
-        bool hasReports = tripCount > 0 || holidayCount > 0;
+        bool hasReports = tripCount > 0 || holidayCount > 0 || educationCount > 0;
         if (hasReports)
         {
             return "작성하지 않은 보고서가 있습니다";
@@ -127,7 +128,7 @@ public static class WindowsNotification
         return "작성하지 않은 대체휴가 요청서가 있습니다";
     }
 
-    private static string FormatBody(int tripCount, int holidayCount, int substituteCount, int substituteTimeCount)
+    private static string FormatBody(int tripCount, int holidayCount, int substituteCount, int substituteTimeCount, int educationCount = 0)
     {
         List<string> parts = new();
         if (tripCount > 0)
@@ -138,6 +139,11 @@ public static class WindowsNotification
         if (holidayCount > 0)
         {
             parts.Add($"휴일근무 {holidayCount}건");
+        }
+
+        if (educationCount > 0)
+        {
+            parts.Add($"교육 {educationCount}건");
         }
 
         if (substituteCount > 0)

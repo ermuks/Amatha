@@ -158,3 +158,32 @@ public sealed class ReportHolidayDayFill
     public string StartTime { get; init; } = string.Empty;
     public string EndTime { get; init; } = string.Empty;
 }
+
+/// <summary>교육결과보고서 (제목에 교육명이 없어 본문으로 신청서와 맞춤)</summary>
+public sealed class EducationReport
+{
+    public int DocumentId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string DocumentStatus { get; set; } = string.Empty;
+    public DateTime? CreatedDate { get; set; }
+    public DateTime? ActionTime { get; set; }
+    /// <summary>본문을 글자로 바꾼 것 (교육명 찾기용)</summary>
+    public string ContentsText { get; set; } = string.Empty;
+    /// <summary>보고서를 쓴 날 (상신일 → 결재일 순)</summary>
+    public DateTime? WrittenDate => CreatedDate ?? ActionTime;
+}
+
+/// <summary>교육결과보고서를 아직 쓰지 않은 교육 신청서(사외교육신청서·영어교육계획서 등)</summary>
+public sealed class MissingEducationReport
+{
+    public BusinessTripDocument Application { get; init; } = new();
+    /// <summary>예: "사외교육", "영어교육" (제목의 [ ] 안에서 신청서·계획서를 뺀 것)</summary>
+    public string KindName { get; init; } = string.Empty;
+    /// <summary>예: "Unity Industry 기술 세미나" (제목 끝 괄호 안). 없으면 빈 값</summary>
+    public string CourseName { get; init; } = string.Empty;
+    public DateTime StartDate { get; init; }
+    public DateTime EndDate { get; init; }
+    /// <summary>신청서에서 교육 기간을 찾지 못해 결재일로 대신했는지</summary>
+    public bool PeriodGuessed { get; init; }
+    public int DayCount => (EndDate.Date - StartDate.Date).Days + 1;
+}

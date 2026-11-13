@@ -103,6 +103,7 @@ public sealed partial class AmaranthClient
         int totalCount = 0;
 
         BusinessTripReports.Clear();
+        EducationReports.Clear();
 
         do
         {
@@ -123,6 +124,12 @@ public sealed partial class AmaranthClient
                 }
 
                 RememberSubstituteHolidayRequest(summary);
+
+                if (IsEducationReport(summary))
+                {
+                    EducationReports.Add(await GetEducationReportDetailAsync(session, summary));
+                    continue;
+                }
 
                 bool isBusinessTripReport =
                     summary.FormName.Contains("출장&휴일근무보고서", StringComparison.OrdinalIgnoreCase) ||
@@ -171,6 +178,7 @@ public sealed partial class AmaranthClient
 
         BusinessTripDocuments.Clear();
         HolidayWorkDocuments.Clear();
+        EducationApplications.Clear();
 
         do
         {
@@ -199,6 +207,10 @@ public sealed partial class AmaranthClient
                 else if (IsHolidayWorkApplication(summary))
                 {
                     HolidayWorkDocuments.Add(await GetHolidayWorkDocumentDetailAsync(session, summary));
+                }
+                else if (IsEducationApplication(summary))
+                {
+                    EducationApplications.Add(await GetEducationApplicationDetailAsync(session, summary));
                 }
             }
 

@@ -99,6 +99,11 @@
                     <Setter TargetName="TileIcon" Property="Data" Value="{StaticResource IconCalendar}" />
                     <Setter TargetName="TileIcon" Property="Stroke" Value="{StaticResource OrangeBrush}" />
                 </DataTrigger>
+                <DataTrigger Binding="{Binding TileKind}" Value="education">
+                    <Setter TargetName="Tile" Property="Background" Value="{StaticResource BlueBgBrush}" />
+                    <Setter TargetName="TileIcon" Property="Data" Value="{StaticResource IconBook}" />
+                    <Setter TargetName="TileIcon" Property="Stroke" Value="{StaticResource BlueBrush}" />
+                </DataTrigger>
                 <DataTrigger Binding="{Binding TileKind}" Value="substitute">
                     <Setter TargetName="Tile" Property="Background" Value="{StaticResource GreenBgBrush}" />
                     <Setter TargetName="TileIcon" Property="Data" Value="{StaticResource IconSun}" />
@@ -266,6 +271,7 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Border Padding="20,18">
                             <StackPanel>
@@ -307,6 +313,15 @@
                         </Border>
                         <Border Grid.Column="3" Padding="20,18" BorderBrush="{StaticResource LineBrush}" BorderThickness="1,0,0,0">
                             <StackPanel>
+                                <TextBlock Style="{StaticResource StatLabelStyle}" Text="교육 보고서" />
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBlock Style="{StaticResource StatNumberStyle}" Text="{Binding MissingEducationCount}" />
+                                    <TextBlock Style="{StaticResource StatUnitStyle}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="4" Padding="20,18" BorderBrush="{StaticResource LineBrush}" BorderThickness="1,0,0,0">
+                            <StackPanel>
                                 <TextBlock Style="{StaticResource StatLabelStyle}" Text="대체휴가 요청서" />
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                     <TextBlock Style="{StaticResource StatNumberStyle}" Text="{Binding SubstituteIssueCount}" />
@@ -345,6 +360,22 @@
                 <Grid Visibility="{Binding HasMissingHolidayWork, Converter={StaticResource VisibleIfTrue}}">
                     <Border Style="{StaticResource ListBoxBorderStyle}">
                         <ItemsControl Margin="0,0,0,-1" ItemsSource="{Binding MissingHolidayWorks}" ItemTemplate="{StaticResource MissingRowTemplate}" />
+                    </Border>
+                    <Border Style="{StaticResource ListFrameStyle}" />
+                </Grid>
+
+                <!-- 교육 보고서 (사외교육신청서·영어교육계획서 → 교육결과보고서) -->
+                <StackPanel Orientation="Horizontal" Margin="0,28,0,12">
+                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="교육 보고서" />
+                    <Border Style="{StaticResource CountPillStyle}">
+                        <TextBlock Style="{StaticResource CountPillTextStyle}" Text="{Binding EducationCountLabel}" />
+                    </Border>
+                </StackPanel>
+                <ContentControl Template="{StaticResource EmptySectionTemplate}" Content="{Binding EducationEmptyText}"
+                                Visibility="{Binding HasMissingEducation, Converter={StaticResource HiddenIfTrue}}" />
+                <Grid Visibility="{Binding HasMissingEducation, Converter={StaticResource VisibleIfTrue}}">
+                    <Border Style="{StaticResource ListBoxBorderStyle}">
+                        <ItemsControl Margin="0,0,0,-1" ItemsSource="{Binding MissingEducations}" ItemTemplate="{StaticResource MissingRowTemplate}" />
                     </Border>
                     <Border Style="{StaticResource ListFrameStyle}" />
                 </Grid>

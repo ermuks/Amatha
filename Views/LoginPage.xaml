@@ -11,12 +11,10 @@
                 <StackPanel>
                     <!-- 로고 -->
                     <StackPanel Orientation="Horizontal">
-                        <Border Width="38" Height="38" CornerRadius="10" BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
-                                RenderOptions.BitmapScalingMode="HighQuality">
-                            <Border.Background>
-                                <ImageBrush ImageSource="../Assets/Logo.png" Stretch="UniformToFill" />
-                            </Border.Background>
-                        </Border>
+                        <!-- 캐릭터 전신(선만 있는 투명 그림). '/'로 시작하면 실행 중인 exe 기준이 되므로 XAML 기준 상대 경로 -->
+                        <Image Source="../Assets/LogoFull.png" Width="52" Height="52" VerticalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
+
                         <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" FontSize="18" FontWeight="Bold"
                                    Foreground="{StaticResource InkBrush}" Text="아맛다보고서" />
                     </StackPanel>
@@ -25,7 +23,7 @@
                                Text="다시 만나서 반가워요" />
                     <!-- 카드 안쪽 폭(340)에서 한 글자만 다음 줄로 넘어가지 않도록 끊는 위치를 정해 둠 -->
                     <TextBlock Margin="0,6,0,0" FontSize="14" Foreground="{StaticResource SubBrush}" TextWrapping="Wrap" LineHeight="21"
-                               Text="작성하지 않은 출장·휴일근무 보고서를&#10;바로 확인할 수 있어요." />
+                               Text="작성하지 않은 출장·휴일근무·교육 보고서를&#10;바로 확인할 수 있어요." />
 
                     <TextBlock Margin="0,28,0,8" FontSize="13" FontWeight="SemiBold"
                                Foreground="{StaticResource Ink3Brush}" Text="아이디" />

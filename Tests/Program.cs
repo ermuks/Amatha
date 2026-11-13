@@ -64,6 +64,7 @@ internal static class Program
         Run("명시적 트레이 시작의 WPF 창 숨김", TrayWindow);
         Run("토스트 알림 시간·쌓기·맨 위 표시·x 닫기", ToastNotification);
         Run("홈 요약: 미작성 수·최근 메일·화면 이동", HomeSummary);
+        Run("교육 신청서·교육결과보고서 구분·기간·짝짓기·미작성 표시", EducationReports);
         Console.WriteLine($"RESULT: {_passed} passed, {_failed} failed");
         return _failed == 0 ? 0 : 1;
     }
@@ -71,7 +72,13 @@ internal static class Program
     private static void Run(string name, Action test)
     {
         try { test(); _passed++; Console.WriteLine("PASS " + name); }
-        catch (Exception error) { _failed++; Console.WriteLine("FAIL " + name + ": " + error.GetBaseException().Message); }
+        catch (Exception error)
+        {
+            _failed++;
+            Console.WriteLine("FAIL " + name + ": " + error.GetBaseException().Message);
+            // 원인을 찾을 때: 환경 변수 AMATHA_TEST_VERBOSE=1 이면 전체 스택을 출력
+            if (Environment.GetEnvironmentVariable("AMATHA_TEST_VERBOSE") == "1") Console.WriteLine(error);
+        }
     }
 
     private static void Assert(bool condition, string message)
@@ -364,6 +371,97 @@ internal static class Program
         Assert(client.GetSubstituteHolidayIssues().Count == 0, "근무일 요청서가 있으면 사용예정일의 미작성 알림이 생기면 안 됩니다.");
         string missingWorkDate = html.Replace("2026년 9월 20일", "년 월 일");
         Assert(Parse<List<HolidayWorkEntry>>("ParseHolidayWorkEntriesFromHtml", missingWorkDate).Count == 0, "근무일이 없으면 사용예정일로 대체하면 안 됩니다.");
+    }
+
+    private static void EducationReports()
+    {
+        // 1) 제목으로 구분 (사용자가 준 실제 제목 형식)
+        string forest = "[사외교육신청서] 디지털트윈팀 최지수 (E-FOREST TECH DAY 2026, 미래 제조를 현실로 바꾸다)";
+        string unity = "[사외교육신청서] 디지털트윈팀 최지수 (Unity Industry 기술 세미나)";
+        string english = "\t[영어교육계획서] 디지털트윈팀 최지수";
+        string report = "[교육결과보고서] 디지털트윈팀 최지수";
+        foreach (string title in new[] { forest, unity, english })
+        {
+            var summary = new ApprovalDocumentSummary { FormName = "", Title = title };
+            Assert(Parse<bool>("IsEducationApplication", summary) && !Parse<bool>("IsEducationReport", summary), "교육 신청서로 구분해야 합니다: " + title);
+            Assert(!Parse<bool>("IsBusinessTripApplication", summary) && !Parse<bool>("IsHolidayWorkApplication", summary), "교육 신청서를 출장·휴일근무로 보면 안 됩니다.");
+        }
+        var reportSummary = new ApprovalDocumentSummary { FormName = "", Title = report };
+        Assert(Parse<bool>("IsEducationReport", reportSummary) && !Parse<bool>("IsEducationApplication", reportSummary), "교육결과보고서로 구분해야 합니다.");
+        Assert(!Parse<bool>("IsEducationApplication", new ApprovalDocumentSummary { FormName = "출장신청서", Title = "[출장신청] 교육 지원" }), "출장신청서는 교육 대상이 아닙니다.");
+
+        // 2) 제목에서 종류·교육명
+        var forestTitle = Parse<(string, string)>("ParseEducationTitle", forest);
+        Assert(forestTitle == ("사외교육", "E-FOREST TECH DAY 2026, 미래 제조를 현실로 바꾸다"), "괄호 안 교육명을 읽어야 합니다: " + forestTitle);
+        Assert(Parse<(string, string)>("ParseEducationTitle", english) == ("영어교육", ""), "교육명이 없는 계획서는 종류만 읽어야 합니다.");
+
+        // 3) 본문에서 교육 기간
+        (DateTime?, DateTime?) Period(string text) => Parse<(DateTime?, DateTime?)>("ParseEducationPeriod", text);
+        Assert(Period("교육명 Unity 세미나 교육기간 2026-10-15(목) ~ 2026-10-16(금) 장소 판교") == (new DateTime(2026, 10, 15), new DateTime(2026, 10, 16)), "교육기간 범위");
+        Assert(Period("교육일시 2026년 11월 3일 14:00~17:00") == (new DateTime(2026, 11, 3), new DateTime(2026, 11, 3)), "교육일시 하루, 시간을 날짜로 보면 안 됨");
+        Assert(Period("수강기간: 2026.09.01 ~ 2026.12.31 (주 2회)") == (new DateTime(2026, 9, 1), new DateTime(2026, 12, 31)), "점으로 쓴 수강기간");
+        Assert(Period("일 시 : 2026년 9월 7일 ~ 9월 8일") == (new DateTime(2026, 9, 7), new DateTime(2026, 9, 8)), "해가 생략된 끝 날짜");
+        Assert(Period("신청 사유만 있음") == (null, null), "날짜가 없으면 null");
+
+        // 4) 신청서 ↔ 보고서 짝짓기
+        DateTime today = DateTime.Today;
+        BusinessTripDocument App(int id, string title, DateTime? start, DateTime? end) => new()
+        {
+            DocumentId = id, Title = title, DocumentStatus = "종결", TripStartDate = start, TripEndDate = end, ActionTime = today.AddDays(-60)
+        };
+        var forestApp = App(1, forest, today.AddDays(-30), today.AddDays(-29));
+        var unityApp = App(2, unity, today.AddDays(-12), today.AddDays(-12));
+        var englishApp = App(3, english, today.AddDays(-90), today.AddDays(-2));
+        var futureApp = App(4, "[사외교육신청서] 디지털트윈팀 최지수 (AI 컨퍼런스)", today.AddDays(5), today.AddDays(6));
+        var undatedApp = App(5, "[사내교육신청서] 디지털트윈팀 최지수 (보안 교육)", null, null);
+        var unityReport = new EducationReport { DocumentId = 11, Title = report, CreatedDate = today.AddDays(-25), ContentsText = "교육명: Unity Industry 기술 세미나 / 소감 …" };
+        var plainReport = new EducationReport { DocumentId = 12, Title = report, CreatedDate = today.AddDays(-20), ContentsText = "교육 내용 정리" };
+        var earlyReport = new EducationReport { DocumentId = 13, Title = report, CreatedDate = today.AddDays(-100), ContentsText = "이전 교육" };
+        var missing = Parse<List<MissingEducationReport>>("MatchEducationReports",
+            new List<BusinessTripDocument> { forestApp, unityApp, englishApp, futureApp, undatedApp },
+            new List<EducationReport> { unityReport, plainReport, earlyReport });
+        List<int> ids = missing.Select(m => m.Application.DocumentId).ToList();
+        // unity는 본문에 교육명이 있는 보고서(11, 교육 전에 썼어도), forest는 시작일 이후 가장 이른 남은 보고서(12)
+        // english·future·undated는 남은 보고서가 없음(13은 모든 교육보다 먼저 씀)
+        Assert(ids.SequenceEqual(new[] { 3, 5, 4 }), "짝이 없는 교육만 남아야 합니다: " + string.Join(",", ids));
+        var undated = missing.Single(m => m.Application.DocumentId == 5);
+        Assert(undated.PeriodGuessed && undated.StartDate == today.AddDays(-60).Date, "기간을 못 찾으면 결재일로 대신해야 합니다.");
+        var englishReport = new EducationReport { DocumentId = 14, Title = report, CreatedDate = today.AddDays(-80), ContentsText = "영어 교육 결과: 회화반 수강" };
+        Assert(Parse<List<MissingEducationReport>>("MatchEducationReports", new List<BusinessTripDocument> { englishApp },
+            new List<EducationReport> { englishReport }).Count == 0, "교육명이 없는 영어교육은 본문의 '영어 교육'으로 맞춰야 합니다.");
+
+        // 5) 미작성 목록 화면: 끝난 교육만 작성 필요·알림, 예정은 알림 없음
+        var client = new AmaranthClient();
+        client.EducationApplications.AddRange(new[] { englishApp, futureApp, unityApp });
+        client.EducationReports.Add(plainReport);
+        DateTimeOffset now = Start;
+        var dashboard = Dashboard(client, new NotificationSnoozeStore(utcNow: () => now));
+        // 20일 전 보고서는 Unity(12일 전) 교육보다 먼저 썼으므로, 그때 진행 중이던 영어교육의 보고서로 봄
+        Assert(dashboard.MissingEducationCount == 2 && dashboard.HasMissingEducation, "보고서가 없는 교육 수를 세야 합니다: " + dashboard.MissingEducationCount);
+        var item = dashboard.MissingEducations.Single(m => m.Hint == "AI 컨퍼런스");
+        Assert(item.Name == "사외교육" && item.ChipText == "예정" && !item.ShouldNotify && item.TileKind == "education",
+            "교육 전 항목은 예정 칩·알림 없음이어야 합니다.");
+        Assert(dashboard.MissingEducations.Single(m => m.Hint == "Unity Industry 기술 세미나").ChipText == "작성 필요", "끝난 교육은 작성 필요");
+        client.EducationReports.Clear();
+        Apply(dashboard);
+        var overdue = dashboard.MissingEducations.First(m => m.Hint == "Unity Industry 기술 세미나");
+        Assert(dashboard.MissingEducationCount == 3 && overdue.ShouldNotify && overdue.ChipText == "작성 필요" && overdue.CanNotify,
+            "끝난 교육은 작성 필요로 알림 대상이어야 합니다.");
+        Assert(dashboard.TotalCount == dashboard.MissingEducationCount && dashboard.OverdueReportCount == 2,
+            "전체·작성 필요 수에 교육을 넣어야 합니다 (영어교육·Unity 2건 지남, AI 컨퍼런스 예정).");
+
+        var previousBalloon = WindowsNotification.TrayBalloon;
+        try
+        {
+            string body = string.Empty;
+            WindowsNotification.TrayBalloon = (_, text) => body = text;
+            WindowsNotification.ShowMissingReports(0, 0, 0, 0, false, 2);
+            Assert(body == "교육 2건", "알림에 교육 건수가 나와야 합니다: " + body);
+        }
+        finally
+        {
+            WindowsNotification.TrayBalloon = previousBalloon;
+        }
     }
 
     private static void LeaveUsageClassification()
