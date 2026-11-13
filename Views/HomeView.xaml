@@ -1,0 +1,174 @@
+<UserControl x:Class="Amaranth10API.Views.HomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource SurfaceBrush}">
+    <!--
+        홈: 다른 화면에서 볼 수 있는 것을 짧게 요약만 합니다(미작성 보고서 수, 최근 메일).
+        앞으로 카드가 늘어날 것을 생각해 폭(최대 720)과 여백을 넉넉히 둡니다.
+    -->
+    <UserControl.Resources>
+        <!-- 카드 전체가 버튼 (미작성 보고서) -->
+        <Style x:Key="HomeCardButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{StaticResource LineBrush}"
+                                BorderThickness="1" CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Stretch" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource Surface2Brush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 카드 머리(내 메일 >) : 배경 없이 글자색만 바뀜 -->
+        <Style x:Key="HomeHeaderButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Stretch" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource AccentFillBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 메일 한 줄 -->
+        <Style x:Key="HomeRowButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" Padding="20,11">
+                            <ContentPresenter HorizontalAlignment="Stretch" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource Surface2Brush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="HomeCardTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="40,32,40,32">
+        <!-- 다른 화면처럼 왼쪽 정렬, 폭은 최대 720까지만 -->
+        <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MaxWidth="720" />
+            <ColumnDefinition Width="0" />
+        </Grid.ColumnDefinitions>
+        <StackPanel>
+            <TextBlock x:Name="TodayText" FontSize="13" Foreground="{StaticResource MutedInkBrush}" />
+            <TextBlock x:Name="GreetingText" Margin="0,4,0,0" FontSize="26" FontWeight="Bold" Foreground="{StaticResource InkBrush}"
+                       TextTrimming="CharacterEllipsis" />
+            <TextBlock Margin="0,6,0,28" FontSize="14" Foreground="{StaticResource SubBrush}" Text="오늘 확인할 것만 간단히 모아 보여드려요." />
+
+            <!-- 미작성 보고서: 누르면 미작성 목록으로 -->
+            <Button x:Name="ReportCard" Style="{StaticResource HomeCardButtonStyle}" Click="Reports_Click"
+                    ToolTip="미작성 목록 열기">
+                <StackPanel>
+                    <DockPanel Margin="20,16,16,14">
+                        <Viewbox DockPanel.Dock="Right" Width="16" Height="16" VerticalAlignment="Center">
+                            <Path Style="{StaticResource IconPath}" Data="{StaticResource IconChevronRight}" Stroke="{StaticResource FaintBrush}" />
+                        </Viewbox>
+                        <TextBlock Style="{StaticResource HomeCardTitleStyle}" Foreground="{StaticResource InkBrush}" Text="미작성 보고서" />
+                    </DockPanel>
+                    <Border Height="1" Background="{StaticResource LineSoftBrush}" />
+                    <DockPanel Margin="20,12,20,16">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <TextBlock x:Name="ReportCountText" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Text="-" />
+                            <TextBlock Margin="4,0,0,5" VerticalAlignment="Bottom" FontSize="14" FontWeight="Medium"
+                                       Foreground="{StaticResource MutedInkBrush}" Text="건" />
+                        </StackPanel>
+                        <TextBlock x:Name="ReportCaption" VerticalAlignment="Center" FontSize="13" Foreground="{StaticResource SubBrush}"
+                                   TextTrimming="CharacterEllipsis" Text="확인하는 중…" />
+                    </DockPanel>
+                </StackPanel>
+            </Button>
+
+            <!-- 내 메일: 머리를 누르면 메일 화면, 줄을 누르면 그 메일을 바로 엶 -->
+            <Border x:Name="MailCard" Margin="0,16,0,0" Background="{StaticResource SurfaceBrush}"
+                    BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12">
+                <StackPanel>
+                    <Button x:Name="MailHeader" Style="{StaticResource HomeHeaderButtonStyle}" Click="Mail_Click" ToolTip="메일 화면 열기">
+                        <DockPanel Margin="20,16,16,14">
+                            <Viewbox DockPanel.Dock="Right" Width="16" Height="16" VerticalAlignment="Center">
+                                <Path Style="{StaticResource IconPath}" Data="{StaticResource IconChevronRight}"
+                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Opacity="0.6" />
+                            </Viewbox>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource HomeCardTitleStyle}" Text="내 메일" />
+                                <Border x:Name="UnreadPill" Margin="8,0,0,0" Style="{StaticResource CountPillStyle}" Visibility="Collapsed">
+                                    <TextBlock x:Name="UnreadText" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentFillBrush}" />
+                                </Border>
+                            </StackPanel>
+                        </DockPanel>
+                    </Button>
+                    <Border Height="1" Background="{StaticResource LineSoftBrush}" />
+                    <ItemsControl x:Name="MailList" Margin="0,4,0,6">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource HomeRowButtonStyle}" Click="MailRow_Click" ToolTip="{Binding Subject}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="14" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Ellipse x:Name="Dot" Width="6" Height="6" Fill="{StaticResource AccentFillBrush}"
+                                                 HorizontalAlignment="Left" VerticalAlignment="Center" Visibility="Hidden" />
+                                        <TextBlock x:Name="Subject" Grid.Column="1" Text="{Binding Subject}" FontSize="13"
+                                                   Foreground="{StaticResource Ink2Brush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="2" Margin="16,0,0,0" MaxWidth="180" Text="{Binding SenderName}" FontSize="12"
+                                                   Foreground="{StaticResource MutedInkBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                    </Grid>
+                                </Button>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsUnread}" Value="True">
+                                        <Setter TargetName="Dot" Property="Visibility" Value="Visible" />
+                                        <Setter TargetName="Subject" Property="FontWeight" Value="SemiBold" />
+                                        <Setter TargetName="Subject" Property="Foreground" Value="{StaticResource InkBrush}" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock x:Name="MailStatusText" Margin="20,8,20,16" FontSize="13" Foreground="{StaticResource MutedInkBrush}"
+                               TextWrapping="Wrap" Text="메일을 불러오는 중…" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

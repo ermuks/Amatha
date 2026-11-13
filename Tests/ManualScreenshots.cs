@@ -99,7 +99,9 @@ internal static class ManualScreenshots
             Mark(window, "01-login", "password", (FrameworkElement)login.FindName("PasswordBox"));
             Mark(window, "01-login", "button", Descendants<Button>(login).First(b => Equals(b.Content, "로그인")));
 
-            // 2. 미작성 목록 (가상 일정)
+            // 2. 홈 (로그인 직후 화면: 미작성 수 + 최근 메일, 가상 데이터)
+            var mailClient = new AmaranthClient();
+            SetHttp(mailClient, new MailFixtureHandler());
             AppRuntime.Current.Session = session;
             window.NavigateToDashboard(session);
             await Settle(800);
@@ -107,6 +109,24 @@ internal static class ManualScreenshots
             DashboardViewModel dashboard = FixtureDashboard(session);
             page.DataContext = dashboard;
             typeof(MainWindow).GetMethod("UpdateDashboardBadge", Private)!.Invoke(window, new object[] { dashboard.TotalCount });
+            var realHome = (HomeView?)typeof(MainWindow).GetField("_homeView", Private)!.GetValue(window);
+            realHome?.Dispose();
+            var home = new HomeView(mailClient, session, dashboard);
+            home.UnreadCountChanged += count => typeof(MainWindow).GetMethod("UpdateMailBadge", Private)!.Invoke(window, new object[] { count });
+            typeof(MainWindow).GetField("_homeView", Private)!.SetValue(window, home);
+            ((ContentControl)window.FindName("HomeHost")).Content = home;
+            typeof(MainWindow).GetMethod("ShowHome", Private)!.Invoke(window, null);
+            await Settle(1500);
+            Capture(window, "02-home.png");
+            Mark(window, "02-home", "nav-home", (FrameworkElement)window.FindName("NavHome"));
+            Mark(window, "02-home", "report", (FrameworkElement)home.FindName("ReportCard"));
+            Mark(window, "02-home", "mail", (FrameworkElement)home.FindName("MailCard"));
+            Mark(window, "02-home", "mail-header", (FrameworkElement)home.FindName("MailHeader"));
+            Mark(window, "02-home", "mail-list", (FrameworkElement)home.FindName("MailList"));
+            Mark(window, "02-home", "sidebar", (FrameworkElement)window.FindName("SidePanel"));
+
+            // 2. 미작성 목록 (가상 일정)
+            typeof(MainWindow).GetMethod("ShowDashboard", Private)!.Invoke(window, null);
             await Settle(900);
             Capture(window, "02-dashboard.png");
             Mark(window, "02-dashboard", "sidebar", (FrameworkElement)window.FindName("SidePanel"));
@@ -127,8 +147,6 @@ internal static class ManualScreenshots
             string profile = Path.Combine(AppContext.BaseDirectory, "test-data", "manual-webview-" + Guid.NewGuid().ToString("N"));
             typeof(MailBodyView).GetField("_environment", BindingFlags.NonPublic | BindingFlags.Static)!
                 .SetValue(null, CoreWebView2Environment.CreateAsync(null, profile));
-            var mailClient = new AmaranthClient();
-            SetHttp(mailClient, new MailFixtureHandler());
             var mailView = new MailView(mailClient, session);
             mailView.UnreadCountChanged += count => typeof(MainWindow).GetMethod("UpdateMailBadge", Private)!.Invoke(window, new object[] { count });
             typeof(MainWindow).GetField("_mailView", Private)!.SetValue(window, mailView);

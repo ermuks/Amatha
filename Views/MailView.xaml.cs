@@ -16,6 +16,7 @@ public partial class MailView : UserControl, IDisposable
     private InboxMailPage? _page;
     private MailBodyView? _bodyView;
     private readonly DispatcherTimer _selectionTimer;
+    private InboxMail? _pendingOpen;
     public event Action? DashboardRequested;
     /// <summary>안 읽은 메일 수가 바뀌면 사이드바 배지에 알립니다.</summary>
     public event Action<int>? UnreadCountChanged;
@@ -80,6 +81,29 @@ public partial class MailView : UserControl, IDisposable
         if (MailGrid.SelectedItem is InboxMail mail) OpenMail(mail);
     }
 
+    /// <summary>
+    /// 다른 화면(홈)에서 고른 메일을 엽니다. 목록에 있으면 그 줄을 선택하고, 목록을 아직 불러오는 중이면 다 불러온 뒤 엽니다.
+    /// </summary>
+    public void OpenMailFromOutside(InboxMail mail)
+    {
+        if (_closed) return;
+        if (_busy || MailGrid.ItemsSource == null)
+        {
+            _pendingOpen = mail;
+            return;
+        }
+
+        _pendingOpen = null;
+        InboxMail? match = (MailGrid.ItemsSource as IEnumerable<InboxMail>)?.FirstOrDefault(item => item.Id == mail.Id);
+        if (match != null)
+        {
+            MailGrid.SelectedItem = match;
+            MailGrid.ScrollIntoView(match);
+        }
+
+        OpenMail(match ?? mail);
+    }
+
     private void OpenMail(InboxMail mail)
     {
         if (_closed || _busy) return;
@@ -142,7 +166,11 @@ public partial class MailView : UserControl, IDisposable
         finally
         {
             _busy = false;
-            if (!_closed) UpdateButtons();
+            if (!_closed)
+            {
+                UpdateButtons();
+                if (_pendingOpen != null && MailGrid.ItemsSource != null) OpenMailFromOutside(_pendingOpen);
+            }
         }
     }
 

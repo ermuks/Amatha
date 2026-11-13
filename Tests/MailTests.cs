@@ -64,6 +64,16 @@ internal static class MailTests
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(Fixture) };
         }
     }
+    /// <summary>받은메일 응답(2건, 안 읽음 1건)을 돌려주는 가짜 연결의 클라이언트 (홈 테스트용)</summary>
+    internal static AmaranthClient FixtureClient()
+    {
+        var client = new AmaranthClient();
+        typeof(AmaranthClient).GetField("_httpClient", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(client, new HttpClient(new Handler()));
+        return client;
+    }
+
+    internal static AmaranthSession FixtureSession() => new() { AuthToken = "test-token", HashKey = "test-key", EmployeeName = "김테이아" };
+
     public static void Layout()
     {
         var window = new MailView(new AmaranthClient(), new AmaranthSession());

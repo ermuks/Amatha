@@ -24,9 +24,10 @@ public partial class MainWindow : Window
     private TrayMenuWindow? _trayMenu;
     private MailView? _mailView;
     private ManualView? _manualView;
+    private HomeView? _homeView;
 
     /// <summary>콘텐츠 패널에 지금 보이는 화면 (환경설정은 그 위에 덮는 화면이라 따로 다룸)</summary>
-    private enum ShellContent { Dashboard, Mail, Manual }
+    private enum ShellContent { Home, Dashboard, Mail, Manual }
     private ShellContent _content = ShellContent.Dashboard;
     private bool _forceClose;
     private bool _hideToTrayAfterRender;
@@ -238,7 +239,8 @@ public partial class MainWindow : Window
     {
         _mailView?.Dispose(); _mailView = null; MailHost.Content = null;
         _manualView?.Dispose(); _manualView = null; ManualHost.Content = null;
-        _content = ShellContent.Dashboard;
+        _homeView?.Dispose(); _homeView = null; HomeHost.Content = null;
+        _content = ShellContent.Dashboard; // 로그인 화면은 RootFrame에 뜸
         Toast.DismissAll();
         AppRuntime.Current.ClearLogin();
         SidePanel.Visibility = Visibility.Collapsed;
@@ -249,14 +251,14 @@ public partial class MainWindow : Window
         ClearHistory();
     }
 
+    /// <summary>
+    /// 로그인 뒤 화면을 꾸밉니다. 미작성 목록(알림·새로고침을 맡음)은 뒤에서 그대로 만들고, 처음에는 홈을 보여 줍니다.
+    /// </summary>
     public void NavigateToDashboard(AmaranthSession session)
     {
-        _content = ShellContent.Dashboard;
         SidePanel.Visibility = Visibility.Visible;
         ApplyShellChrome();
         SettingsOverlay.Visibility = Visibility.Collapsed;
-        UpdateContentVisibility();
-        SetActiveNav(NavDashboard);
         DashboardPage page = new(session);
         AppRuntime.Current.Dashboard = page.ViewModel;
         page.ViewModel.PropertyChanged += (_, args) =>
@@ -266,6 +268,38 @@ public partial class MainWindow : Window
         UpdateDashboardBadge(page.ViewModel.TotalCount);
         RootFrame.Navigate(page);
         ClearHistory();
+
+        _homeView?.Dispose();
+        _homeView = new HomeView(App.Client, session, page.ViewModel);
+        _homeView.ReportsRequested += ShowDashboard;
+        _homeView.MailRequested += OpenMailFromHome;
+        _homeView.UnreadCountChanged += UpdateMailBadge;
+        HomeHost.Content = _homeView;
+        ShowHome();
+    }
+
+    private void Home_Click(object sender, RoutedEventArgs e) => ShowHome();
+
+    private void ShowHome()
+    {
+        if (_homeView == null)
+        {
+            ShowDashboard();
+            return;
+        }
+
+        _content = ShellContent.Home;
+        LeaveSettings();
+        SetActiveNav(NavHome);
+        UpdateContentVisibility();
+        _homeView.RefreshIfStale();
+    }
+
+    /// <summary>홈의 메일 카드에서: 메일 화면으로 가고, 고른 메일이 있으면 오른쪽 본문에 바로 엽니다.</summary>
+    private void OpenMailFromHome(InboxMail? mail)
+    {
+        EmailList_Click(this, new RoutedEventArgs());
+        if (mail != null && _content == ShellContent.Mail) _mailView?.OpenMailFromOutside(mail);
     }
 
     public void ShowFromTray()
@@ -406,6 +440,7 @@ public partial class MainWindow : Window
         {
             _mailView?.Dispose(); _mailView = null;
             _manualView?.Dispose(); _manualView = null;
+            _homeView?.Dispose(); _homeView = null;
             _trayMenu?.Close();
             _tray.Visible = false;
             _tray.Dispose();
@@ -447,6 +482,7 @@ public partial class MainWindow : Window
     private void UpdateContentVisibility()
     {
         RootFrame.Visibility = _content == ShellContent.Dashboard ? Visibility.Visible : Visibility.Collapsed;
+        HomeHost.Visibility = _content == ShellContent.Home ? Visibility.Visible : Visibility.Collapsed;
         // WebView2는 HWND를 사용하므로 WPF 설정·확인 창을 가리지 않도록 숨깁니다.
         bool covered = SettingsOverlay.Visibility == Visibility.Visible || ConfirmOverlay.Visibility == Visibility.Visible;
         MailHost.Visibility = _content == ShellContent.Mail && !covered ? Visibility.Visible : Visibility.Collapsed;
@@ -479,7 +515,7 @@ public partial class MainWindow : Window
 
     private RadioButton CurrentNav() =>
         SettingsOverlay.Visibility == Visibility.Visible ? NavSettings
-        : _content switch { ShellContent.Mail => NavMail, ShellContent.Manual => NavManual, _ => NavDashboard };
+        : _content switch { ShellContent.Home => NavHome, ShellContent.Mail => NavMail, ShellContent.Manual => NavManual, _ => NavDashboard };
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
@@ -506,6 +542,7 @@ public partial class MainWindow : Window
 
     private void SetActiveNav(RadioButton target)
     {
+        NavHome.IsChecked = ReferenceEquals(target, NavHome);
         NavDashboard.IsChecked = ReferenceEquals(target, NavDashboard);
         NavMail.IsChecked = ReferenceEquals(target, NavMail);
         NavManual.IsChecked = ReferenceEquals(target, NavManual);

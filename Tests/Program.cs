@@ -63,6 +63,7 @@ internal static class Program
         Run("업데이트 팝업 좌측 체크박스와 취소·초기화", UpdateDialog);
         Run("명시적 트레이 시작의 WPF 창 숨김", TrayWindow);
         Run("토스트 알림 시간·쌓기·맨 위 표시·x 닫기", ToastNotification);
+        Run("홈 요약: 미작성 수·최근 메일·화면 이동", HomeSummary);
         Console.WriteLine($"RESULT: {_passed} passed, {_failed} failed");
         return _failed == 0 ? 0 : 1;
     }
@@ -488,6 +489,57 @@ internal static class Program
         {
             foreach (ToastWindow toast in Toast.Open.ToArray()) toast.Close();
             owner.Close();
+        }
+    }
+
+    private static void HomeSummary()
+    {
+        DateTimeOffset now = Start;
+        var store = new NotificationSnoozeStore(utcNow: () => now);
+        var dashboard = Dashboard(FixtureClient(), store);
+        // 실제 앱처럼 await 뒤가 UI 스레드에서 이어지도록 (기본 테스트 실행에는 WPF 동기화 컨텍스트가 없음)
+        SynchronizationContext? previousContext = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+        var home = new HomeView(MailTests.FixtureClient(), MailTests.FixtureSession(), dashboard);
+        try
+        {
+            // 미작성 목록을 아직 한 번도 불러오지 않았으면 숫자 대신 '-'
+            Assert(((TextBlock)home.FindName("ReportCountText")).Text == "-", "미작성 목록을 불러오기 전에는 건수를 단정하면 안 됩니다.");
+            typeof(DashboardViewModel).GetField("_lastLoadedAt", Private)!.SetValue(dashboard, (DateTime?)DateTime.Now);
+            Apply(dashboard); // 집계 갱신 → 홈이 PropertyChanged로 따라감
+            int unread = -1;
+            home.UnreadCountChanged += count => unread = count;
+            home.RefreshIfStale();
+            for (int i = 0; i < 30 && ((ItemsControl)home.FindName("MailList")).ItemsSource == null; i++) Pump(100);
+            Pump(100);
+
+            Assert(((TextBlock)home.FindName("ReportCountText")).Text == dashboard.TotalCount.ToString() && dashboard.TotalCount > 0,
+                "홈의 미작성 보고서 수는 미작성 목록의 전체 건수와 같아야 합니다.");
+            Assert(((TextBlock)home.FindName("GreetingText")).Text == "안녕하세요, 김테이아님", "로그인한 사람 이름으로 인사해야 합니다.");
+            var mails = ((ItemsControl)home.FindName("MailList")).Items;
+            Assert(mails.Count == 2 && unread == 1 && ((TextBlock)home.FindName("UnreadText")).Text == "안 읽음 1",
+                $"최근 메일과 안 읽은 수를 보여 주고 사이드바 배지에 알려야 합니다. (메일 {mails.Count}건, 알림 {unread}, 안내 '{((TextBlock)home.FindName("MailStatusText")).Text}')");
+
+            home.Measure(new Size(886, 753)); home.Arrange(new Rect(0, 0, 886, 753)); home.UpdateLayout();
+            bool reports = false; InboxMail? opened = null; bool mailHeader = false;
+            home.ReportsRequested += () => reports = true;
+            home.MailRequested += mail => { if (mail == null) mailHeader = true; else opened = mail; };
+            ((Button)home.FindName("ReportCard")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            ((Button)home.FindName("MailHeader")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            Button firstRow = Descendants<Button>((ItemsControl)home.FindName("MailList")).First();
+            firstRow.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            Assert(reports && mailHeader && opened != null && ReferenceEquals(opened, mails[0]),
+                "카드를 누르면 미작성 목록, 메일 머리는 메일 화면, 메일 줄은 그 메일로 가야 합니다.");
+
+            dashboard.DismissItem(dashboard.MissingTrips.First());
+            Pump(100);
+            Assert(((TextBlock)home.FindName("ReportCountText")).Text == dashboard.TotalCount.ToString(), "목록에서 지우면 홈 숫자도 바로 바뀌어야 합니다.");
+            SavePreview(home, 886, 753, "home-preview.png");
+        }
+        finally
+        {
+            home.Dispose();
+            SynchronizationContext.SetSynchronizationContext(previousContext);
         }
     }
 

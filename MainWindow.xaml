@@ -25,21 +25,20 @@
         <Border x:Name="SidePanel"
                 Width="232"
                 Padding="18,22,14,16"
+                ClipToBounds="True"
                 Visibility="Collapsed">
+            <Grid>
+            <!-- 배경 캐릭터: 아주 옅게(0.06) 왼쪽 아래에 크게, 발끝은 창 아래로 잘림. 패딩을 무시하도록 음수 여백 -->
+            <Canvas Margin="-18,-22,-14,-16" IsHitTestVisible="False">
+                <!-- '/'로 시작하면 실행 중인 exe 기준이 되어 테스트에서 못 찾음 → XAML 기준 상대 경로 -->
+                <Image x:Name="SidebarCharacter" Source="Assets/SidebarCharacter.png" Width="356" Height="356"
+                       Canvas.Left="4" Canvas.Bottom="-72" Opacity="0.06"
+                       RenderOptions.BitmapScalingMode="HighQuality" />
+            </Canvas>
             <DockPanel LastChildFill="False">
-                <!-- 로고 -->
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,22">
-                    <!-- 캐릭터 얼굴(앱 아이콘 작은 크기와 같은 구도)을 흰 둥근 타일에 -->
-                    <Border Width="34" Height="34" CornerRadius="9" BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
-                            RenderOptions.BitmapScalingMode="HighQuality">
-                        <Border.Background>
-                            <!-- '/'로 시작하면 실행 중인 exe 기준이 되어 테스트에서 못 찾음 → XAML 기준 상대 경로 -->
-                            <ImageBrush ImageSource="Assets/Logo.png" Stretch="UniformToFill" />
-                        </Border.Background>
-                    </Border>
-                    <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" FontSize="16" FontWeight="Bold"
-                               Foreground="{StaticResource InkBrush}" Text="아맛다보고서" />
-                </StackPanel>
+                <!-- 홈 (로그인 후 처음 보이는 요약 화면) -->
+                <RadioButton x:Name="NavHome" DockPanel.Dock="Top" Margin="0,0,0,14" Style="{StaticResource SideNavRadioStyle}"
+                             Tag="{StaticResource IconHome}" Content="홈" Click="Home_Click" />
 
                 <!-- 이동 메뉴 -->
                 <StackPanel DockPanel.Dock="Top">
@@ -95,6 +94,7 @@
                     </Grid>
                 </StackPanel>
             </DockPanel>
+            </Grid>
         </Border>
 
         <!-- ───────── 콘텐츠 패널 (흰색, 라운드 16) ───────── -->
@@ -109,6 +109,10 @@
                 <Frame x:Name="RootFrame"
                        NavigationUIVisibility="Hidden"
                        JournalOwnership="OwnsJournal" />
+
+                <!-- 홈 (요약) -->
+                <ContentControl x:Name="HomeHost" Visibility="Collapsed"
+                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
 
                 <ContentControl x:Name="MailHost" Visibility="Collapsed"
                                 HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
