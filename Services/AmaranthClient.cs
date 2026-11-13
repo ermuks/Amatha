@@ -11,7 +11,7 @@ using Amaranth10API.Models;
 
 namespace Amaranth10API.Services;
 
-public sealed class AmaranthClient
+public sealed partial class AmaranthClient
 {
     private const string BaseUrl = "https://erp.teia.co.kr";
     private const string GroupSeq = "gcmsAmaranth35867";

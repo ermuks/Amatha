@@ -21,6 +21,7 @@ public partial class MainWindow : Window
 {
     private readonly Forms.NotifyIcon _tray = new();
     private TrayMenuWindow? _trayMenu;
+    private MailWindow? _mailWindow;
     private bool _forceClose;
     private bool _menuExpanded;
     private bool _hideToTrayAfterRender;
@@ -512,8 +513,17 @@ public partial class MainWindow : Window
     private void EmailList_Click(object sender, RoutedEventArgs e)
     {
         CollapseMenu(animate: true);
-        MessageBox.Show(this, "이메일 목록 기능을 준비 중입니다.", "이메일 목록",
-            MessageBoxButton.OK, MessageBoxImage.Information);
+        AmaranthSession? session = AppRuntime.Current.Session;
+        if (session == null) return;
+        if (_mailWindow != null)
+        {
+            _mailWindow.WindowState = WindowState.Normal;
+            _mailWindow.Activate();
+            return;
+        }
+        _mailWindow = new MailWindow(App.Client, session) { Owner = this };
+        _mailWindow.Closed += (_, _) => _mailWindow = null;
+        _mailWindow.Show();
     }
 
     private void Manual_Click(object sender, RoutedEventArgs e)
@@ -543,6 +553,7 @@ public partial class MainWindow : Window
 
     private void Logout_Click(object sender, RoutedEventArgs e)
     {
+        _mailWindow?.Close();
         AppRuntime.Current.ForgetSavedLogin();
         NavigateToLogin();
     }

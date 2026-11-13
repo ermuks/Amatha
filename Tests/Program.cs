@@ -32,6 +32,7 @@ internal static class Program
             Run("실제 설치기 압축 해제·업데이트 덮어쓰기·트레이 인자", InstallerSmoke);
             return _failed == 0 ? 0 : 1;
         }
+        Run("받은메일 응답·서명·페이지·취소", MailTests.Verify);
         Run("조용한 업데이트의 경로·인자 검증", SilentUpdateArguments);
         Run("트레이 재시작 첫 조회는 GUI 알림 억제", TrayStartupNotification);
         Run("2시간 직전과 정확한 만료 시점", ExpiryBoundary);
@@ -51,6 +52,7 @@ internal static class Program
         Run("카드가 기존 신청서 원문을 보관함", ApplicationDocumentLink);
         Run("신청서 HTML과 텍스트 원문 표시", ApplicationHtml);
         Run("실제 대시보드 XAML 체크박스와 화면 렌더링", DashboardLayout);
+        Run("받은메일 목록 실제 XAML 레이아웃", MailTests.Layout);
         Run("업데이트 팝업 좌측 체크박스와 취소·초기화", UpdateDialog);
         Run("명시적 트레이 시작의 WPF 창 숨김", TrayWindow);
         Console.WriteLine($"RESULT: {_passed} passed, {_failed} failed");

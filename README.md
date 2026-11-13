@@ -1,6 +1,6 @@
 # 아맛다보고서 (Amaranth10API)
 
-현재 버전은 `Directory.Build.props` 기준 **1.9.0**입니다.
+현재 버전은 `Directory.Build.props` 기준 **1.10.0**입니다.
 
 TEIA Amaranth 10 ERP에 로그인해, **작성하지 않은 출장·휴일근무 보고서**를 찾아 알려 주고, 카드에 연결된 기존 신청서를 내장 WebView2로 보여 주는 Windows 데스크톱 앱입니다. 배포용으로 `Installer` 프로젝트(`아맛다보고서Install.exe`)가 본 프로그램 zip을 내장해 설치합니다. 실행 중 GitHub(`ermuks/Amatha`)에 더 새 버전이 있으면 창 아래에서 설치기를 받아 올립니다.
 
@@ -56,7 +56,7 @@ WebView2 Runtime(Edge 기반)이 없으면 신청서 보기 창과 사용자 매
 
 ```
 Amaranth10API/
-├── Directory.Build.props     앱·설치기 공통 버전 (1.9.0)
+├── Directory.Build.props     앱·설치기 공통 버전 (1.10.0)
 ├── AppVersion.cs             표시용 버전 문자열·비교용 Version
 ├── Amaranth10API.csproj      본 프로그램, 매뉴얼 복사
 ├── app.manifest              DPI / Windows 10 호환
@@ -170,7 +170,7 @@ SettingsStore        %AppData%\아맛다보고서\settings.json
 
 ### 5.3 메인 셸 (`MainWindow`)
 
-로그인 전에는 왼쪽 패널이 숨겨집니다. 대시보드에 들어가면 햄버거 메뉴가 나타납니다. 창 아래 상태 줄 오른쪽은 `ver 1.9.0` (`AppVersion.FooterLabel`), 왼쪽은 새 버전이 있을 때만 “새 버전이 있습니다. (v…)” 링크입니다.
+로그인 전에는 왼쪽 패널이 숨겨집니다. 대시보드에 들어가면 햄버거 메뉴가 나타납니다. 창 아래 상태 줄 오른쪽은 `ver 1.10.0` (`AppVersion.FooterLabel`), 왼쪽은 새 버전이 있을 때만 “새 버전이 있습니다. (v…)” 링크입니다.
 
 | 메뉴 | 위치 | 동작 |
 | --- | --- | --- |
@@ -422,8 +422,8 @@ MAJOR(첫 번째): 대규모 변경
 
 `AppVersion`은 `AssemblyInformationalVersion`을 읽고(`+` git 해시는 자름), 없으면 `Major.Minor.Build`를 씁니다. `Current`는 비교용 `System.Version`입니다.
 
-- 본 프로그램 하단: `ver 1.9.0`
-- 설치기 첫 버튼: `아맛다보고서 1.9.0 설치`
+- 본 프로그램 하단: `ver 1.10.0`
+- 설치기 첫 버튼: `아맛다보고서 1.10.0 설치`
 
 버전을 올릴 때는 `Directory.Build.props`만 고치면 됩니다. GitHub `main`의 같은 파일과 최신 릴리스 태그가 업데이트 확인의 기준입니다.
 
@@ -511,7 +511,7 @@ User-Agent는 `AmathaBogoso/{버전}`입니다.
 
 | 파일 | 역할 |
 | --- | --- |
-| `Directory.Build.props` | 공통 버전 1.9.0 |
+| `Directory.Build.props` | 공통 버전 1.10.0 |
 | `AppVersion.cs` | 하단·설치 버튼 문자열, `Current` |
 | `App.xaml.cs` | 단일 인스턴스, TLS, 알림 초기화, 공유 Client, `--autostart` |
 | `MainWindow.xaml.cs` | 탐색, 트레이, 자동 로그인, 사이드 메뉴, 설정, 업데이트 링크 |
@@ -550,3 +550,5 @@ Visual Studio에서 `Properties/launchSettings.json`의 프로필 이름 **아�
 목록의 `삭제` 버튼은 해당 사용자·종류·기간의 항목을 목록과 알림에서 영구 제외합니다. ERP 문서는 삭제하지 않습니다. 제외 상태는 `%AppData%/아맛다보고서/notification-snoozes.json.dismissed.json`에 저장됩니다. 보고서 날짜는 `2026 10월 26일`처럼 년이 빠진 형식도 인식합니다.
 
 업데이트 팝업 왼쪽의 `조용히 업데이트하기`를 체크하면 설치기를 `--silent "현재 실행 파일 전체 경로"`로 실행합니다. 설치기는 경로 선택·완료 화면 없이 해당 폴더에 업데이트하고 앱을 `--tray`로 재실행합니다. `--tray`는 시작 설정과 관계없이 트레이에서 시작하며 기존 앱이 실행 중이면 창을 활성화하지 않습니다. UAC 승인은 필요하고 실패 시 오류를 표시합니다. 일반 설치는 기존 화면을 유지합니다.
+
+메뉴의 `이메일 목록`은 현재 세션의 INBOX를 `/mail/mail003A01`로 조회합니다. 최신순 100건씩 페이지 이동하며 제목·발신자·수신 시각·읽음·첨부 상태를 표시합니다. 인증은 로그인 세션의 토큰과 매 요청마다 생성한 HMAC 서명을 사용하고 메일함 번호를 고정하지 않습니다. 본문 열기와 읽음 변경은 수행하지 않습니다.
