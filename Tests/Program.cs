@@ -28,6 +28,8 @@ internal static class Program
     {
         if (args.Contains("--mail-body-smoke")) return MailBodyTests.Smoke();
         if (args.Contains("--webview-smoke")) return WebViewSmoke();
+        int shots = Array.IndexOf(args, "--manual-shots");
+        if (shots >= 0) return ManualScreenshots.Run(shots + 1 < args.Length ? args[shots + 1] : Path.Combine(AppContext.BaseDirectory, "test-data", "manual-shots"));
         if (args.Contains("--installer-smoke"))
         {
             Run("실제 설치기 압축 해제·업데이트 덮어쓰기·트레이 인자", InstallerSmoke);

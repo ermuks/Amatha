@@ -233,6 +233,15 @@
 - 작을수록 검은 선을 조금 굵게(1024 기준 반경 16px=4 … 48px=0). 더 굵게 하면 두 눈이 붙어 보임
 - 다시 만들기: `python docs/redesign/icon/make_icon.py docs/redesign/icon/source.png Assets/AppIcon.ico 미리보기.png` (크기별 결과: `icon/sizes-preview.png`)
 
+### 4.10 사용자 매뉴얼 (1.16.0)
+
+- **같은 창에서 보기**: 사이드바 "사용자 매뉴얼"이 이동 메뉴(`NavManual`, RadioButton)가 되고, 별도 `ManualWindow` 대신 `Views/ManualView`(WebView2)를 메인 창 `ManualHost`에 띄웁니다. 메일처럼 환경설정·확인 팝업이 뜨면 숨기고(`UpdateContentVisibility`), 다른 메뉴에 갔다 와도 읽던 위치를 유지, 로그아웃 시 해제. 매뉴얼 밖 링크는 기본 브라우저로. WebView2는 둥근 모서리로 잘리지 않아 위·아래 16px를 띄움.
+- **매뉴얼 디자인**: `docs/사용매뉴얼.html`을 새 팔레트(흰 바탕·보라 `#5847C9`·IBM Plex Sans KR)로 바꾸고 목차 알약을 추가. 메일 2단 화면·토스트 알림·바로 저장되는 환경설정·사이드바 업데이트 안내에 맞게 글을 고침. 섹션: 1 로그인 · 2 미작성 목록 · 3 보고서 작성 · 4 메일 · 5 메뉴·환경설정 · 6 트레이·종료 · 7 알림 · 8 업데이트.
+- **새 화면 그림**: `01-login`, `02-dashboard`, `04-mail`(새, 옛 `04-menu` 삭제), `05-settings`, `06-tray`, `07-exit`. `03-report`는 ERP 화면이라 그대로.
+  - 찍는 법: `Tests\bin\Release\net48\Amaranth10API.Tests.exe --manual-shots <폴더>` — 실제 창을 띄우되 **자동 로그인을 끄고 ERP 연결을 가짜 응답으로 바꿔** 가상 데이터(김하늘 · 디지털트윈팀 등)만 씀. PrintWindow로 WebView2까지 찍고, 요소 위치를 `rects.txt`로 남김.
+  - 넣는 법: `python docs/tools/update_manual_shots.py <폴더>` — PNG를 `docs/images/`로 복사하고, 매뉴얼의 `shot:이름` 표시 사이를 그림 + 빨간 번호 상자 + 설명 목록으로 다시 씀(번호 위치는 `rects.txt`에서 계산하므로 화면이 바뀌어도 따라감).
+- 함께 고친 것: 로그인 카드의 안내 문장이 한 글자만 다음 줄로 넘어가던 문제(줄바꿈 위치 지정).
+
 ### 4.6 그 밖
 
 - `ConfirmDialog.xaml`: 흰 카드 라운드 16, 부드러운 그림자, 버튼 높이 40 · 최소폭 88 · 간격 8. "조용히 업데이트하기"는 새 체크박스 스타일.

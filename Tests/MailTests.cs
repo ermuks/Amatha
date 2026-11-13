@@ -131,7 +131,23 @@ internal static class MailTests
             Check(host.Visibility == Visibility.Collapsed, "설정 화면이 웹뷰어에 가려지면 안 됨");
             typeof(MainWindow).GetMethod("EmailList_Click", flags)!.Invoke(shell, new object[] { shell, new RoutedEventArgs() });
             Check(host.Visibility == Visibility.Visible, "설정에서 메일 복귀");
+
+            // 사용자 매뉴얼도 새 창 없이 같은 창의 패널로 열려야 함
+            var manualHost = (ContentControl)shell.FindName("ManualHost");
+            var navManual = (RadioButton)shell.FindName("NavManual");
+            Check(ManualView.Exists(ManualView.DefaultFolder), "테스트 출력 폴더에 ReadMe.html이 있어야 함");
+            typeof(MainWindow).GetMethod("Manual_Click", flags)!.Invoke(shell, new object[] { shell, new RoutedEventArgs() });
+            var manual = manualHost.Content as ManualView;
+            Check(manual != null && manualHost.Visibility == Visibility.Visible && host.Visibility == Visibility.Collapsed
+                && navManual.IsChecked == true && Application.Current.Windows.Count == windows, "매뉴얼은 새 창 없이 메인 창 안에 표시되어야 함");
+            typeof(MainWindow).GetMethod("Settings_Click", flags)!.Invoke(shell, new object[] { shell, new RoutedEventArgs() });
+            Check(manualHost.Visibility == Visibility.Collapsed, "설정 화면이 매뉴얼 웹뷰어에 가려지면 안 됨");
+            typeof(MainWindow).GetMethod("ShowDashboard", flags)!.Invoke(shell, null);
+            Check(manualHost.Visibility == Visibility.Collapsed && navManual.IsChecked != true, "미작성 목록으로 가면 매뉴얼을 숨겨야 함");
+            typeof(MainWindow).GetMethod("Manual_Click", flags)!.Invoke(shell, new object[] { shell, new RoutedEventArgs() });
+            Check(ReferenceEquals(manualHost.Content, manual) && manualHost.Visibility == Visibility.Visible, "매뉴얼 재진입 시 읽던 화면을 유지해야 함");
             shell.NavigateToLogin();
+            Check(manualHost.Content == null && (bool)typeof(ManualView).GetField("_closed", flags)!.GetValue(manual)!, "로그아웃 시 매뉴얼 리소스 해제");
             Check(host.Content == null && (bool)typeof(MailView).GetField("_closed", flags)!.GetValue(view)!, "로그아웃 시 메일 리소스 해제");
         }
         finally

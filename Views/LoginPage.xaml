@@ -22,8 +22,9 @@
 
                     <TextBlock Margin="0,28,0,0" FontSize="22" FontWeight="Bold" Foreground="{StaticResource InkBrush}"
                                Text="다시 만나서 반가워요" />
-                    <TextBlock Margin="0,6,0,0" FontSize="14" Foreground="{StaticResource SubBrush}" TextWrapping="Wrap"
-                               Text="작성하지 않은 출장·휴일근무 보고서를 바로 확인합니다." />
+                    <!-- 카드 안쪽 폭(340)에서 한 글자만 다음 줄로 넘어가지 않도록 끊는 위치를 정해 둠 -->
+                    <TextBlock Margin="0,6,0,0" FontSize="14" Foreground="{StaticResource SubBrush}" TextWrapping="Wrap" LineHeight="21"
+                               Text="작성하지 않은 출장·휴일근무 보고서를&#10;바로 확인할 수 있어요." />
 
                     <TextBlock Margin="0,28,0,8" FontSize="13" FontWeight="SemiBold"
                                Foreground="{StaticResource Ink3Brush}" Text="아이디" />

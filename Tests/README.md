@@ -16,3 +16,14 @@ WebView2 Runtime이 설치된 PC에서는 다음 명령으로 실제 웹뷰어 �
 ```powershell
 & .\Tests\bin\Release\net48\Amaranth10API.Tests.exe --webview-smoke
 ```
+
+## 사용 매뉴얼 화면 다시 찍기
+
+자동 로그인을 끄고 ERP 연결을 가짜 응답으로 바꾼 뒤 실제 창을 띄워 가상 데이터로 찍습니다. 실제 계정·데이터는 쓰지 않습니다.
+
+```powershell
+& .\Tests\bin\Release\net48\Amaranth10API.Tests.exe --manual-shots .\shots
+python docs/tools/update_manual_shots.py .\shots
+```
+
+두 번째 명령이 PNG를 `docs/images/`로 복사하고 `docs/사용매뉴얼.html`의 번호 표시를 다시 씁니다.

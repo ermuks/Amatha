@@ -58,8 +58,8 @@
                             </Border>
                         </Grid>
                     </RadioButton>
-                    <Button Style="{StaticResource SideMenuButtonStyle}" Tag="{StaticResource IconBook}"
-                            Content="사용자 매뉴얼" Click="Manual_Click" />
+                    <RadioButton x:Name="NavManual" Style="{StaticResource SideNavRadioStyle}"
+                                 Tag="{StaticResource IconBook}" Content="사용자 매뉴얼" Click="Manual_Click" />
                 </StackPanel>
 
                 <!-- 하단 메뉴 -->
@@ -108,6 +108,10 @@
                        JournalOwnership="OwnsJournal" />
 
                 <ContentControl x:Name="MailHost" Visibility="Collapsed"
+                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+
+                <!-- 사용자 매뉴얼 (새 창 대신 같은 창에서) -->
+                <ContentControl x:Name="ManualHost" Visibility="Collapsed"
                                 HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
 
                 <!-- 환경설정 (사이드바의 '환경설정'으로 열림, 바꾼 값은 바로 저장) -->

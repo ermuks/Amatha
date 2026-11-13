@@ -10,6 +10,15 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.Drawing" />
     <ProjectReference Include="..\Amaranth10API.csproj" />
   </ItemGroup>
+  <!-- Copy the user manual like the main app does, so manual tests and screenshot generation can find ReadMe.html -->
+  <Target Name="CopyUserManualForTests" AfterTargets="Build">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\docs\사용매뉴얼.html" DestinationFiles="$(TargetDir)ReadMe.html" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <_TestManualImages Include="$(MSBuildProjectDirectory)\..\docs\images\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_TestManualImages)" DestinationFolder="$(TargetDir)images\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

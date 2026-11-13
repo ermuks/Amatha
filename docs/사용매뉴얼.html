@@ -6,26 +6,39 @@
   <title>아맛다보고서 사용 매뉴얼</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!--
+    화면 그림과 빨간 번호 표시는 docs/tools/update_manual_shots.py 가 채웁니다.
+    본문의 "shot:이름" 표시와 "/shot" 표시 사이는 직접 고치지 마세요(다시 만들 때 덮어씀).
+  -->
   <style>
     :root {
-      --navy: #3e5270;
-      --ink: #2a3548;
-      --muted: #5a6f8a;
-      --line: #d5dde6;
-      --paper: #fbfcfd;
-      --canvas: #f3f5f8;
-      --red: #e03131;
-      --red-soft: #fff1f1;
+      color-scheme: light; /* 내장 웹뷰어에서 스크롤 막대가 어둡게 나오지 않게 */
+      --accent: #5847c9;
+      --accent-soft: #f2f0fb;
+      --accent-tile: #eeecfa;
+      --ink: #1c1b19;
+      --ink2: #2e2d2a;
+      --sub: #5f5d57;
+      --muted: #6e6b64;
+      --line: #e6e4de;
+      --line-soft: #efede8;
+      --surface: #ffffff;
+      --surface2: #fafaf8;
+      --canvas: #f1f0ec;
+      --mark: #e03131;
+      --green-bg: #e7f5ec; --green: #17663a;
+      --red-bg: #fdecec; --red: #b42318;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
-      font-family: "Noto Sans KR", "Malgun Gothic", sans-serif;
-      color: var(--ink);
-      background: var(--canvas);
-      line-height: 1.45;
+      font-family: "IBM Plex Sans KR", "Malgun Gothic", sans-serif;
+      color: var(--ink2);
+      background: var(--surface);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
     }
 
     .toolbar {
@@ -34,99 +47,87 @@
       z-index: 20;
       display: flex;
       justify-content: flex-end;
-      gap: 8px;
-      padding: 12px 20px;
-      background: rgba(243, 245, 248, 0.92);
+      align-items: center;
+      gap: 12px;
+      padding: 10px 28px;
+      background: rgba(255, 255, 255, 0.94);
       backdrop-filter: blur(8px);
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid var(--line-soft);
     }
 
     button {
       font-family: inherit;
-      font-size: 14px;
-      font-weight: 700;
-      border: 0;
+      font-size: 13px;
+      font-weight: 500;
       border-radius: 10px;
-      padding: 10px 16px;
+      padding: 8px 14px;
       cursor: pointer;
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid #e0ded8;
     }
 
-    .btn-pdf { background: var(--navy); color: #fff; }
-    .btn-pdf:hover { background: #33455e; }
-    .hint { font-size: 12px; color: var(--muted); align-self: center; }
+    button:hover { background: #f7f6f3; }
+    .hint { font-size: 12px; color: var(--muted); }
 
     .wrap {
-      max-width: 920px;
+      max-width: 940px;
       margin: 0 auto;
-      padding: 28px 20px 64px;
+      padding: 28px 28px 64px;
     }
 
-    header.hero {
-      margin-bottom: 36px;
-    }
-
+    header.hero { margin-bottom: 28px; }
     .badge {
       display: inline-block;
       font-size: 12px;
-      font-weight: 700;
-      color: var(--navy);
-      background: #e8edf3;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-soft);
       border-radius: 999px;
-      padding: 4px 10px;
+      padding: 3px 10px;
       margin-bottom: 10px;
     }
+    h1 { font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; margin-bottom: 6px; }
+    .lead { font-size: 15px; color: var(--sub); }
 
-    h1 {
-      font-size: 32px;
-      font-weight: 900;
-      letter-spacing: -0.04em;
-      margin-bottom: 8px;
+    .toc { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+    .toc a {
+      font-size: 12px; font-weight: 600; color: var(--ink3, #4a4843); text-decoration: none;
+      border: 1px solid #e0ded8; border-radius: 999px; padding: 4px 12px; background: var(--surface);
     }
-
-    .lead {
-      font-size: 18px;
-      font-weight: 500;
-      color: var(--muted);
-    }
+    .toc a:hover { background: var(--surface2); }
 
     .step {
-      background: var(--paper);
+      background: var(--surface);
       border: 1px solid var(--line);
-      border-radius: 20px;
-      padding: 22px 22px 18px;
-      margin-bottom: 22px;
+      border-radius: 16px;
+      padding: 24px 24px 20px;
+      margin-bottom: 20px;
       break-inside: avoid;
-      scroll-margin-top: 84px;
+      scroll-margin-top: 72px;
     }
 
     .step h2 {
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 20px;
-      font-weight: 800;
-      margin-bottom: 8px;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 6px;
     }
 
     .num {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--navy);
-      color: #fff;
-      font-size: 14px;
-      font-weight: 800;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      width: 26px; height: 26px; border-radius: 8px;
+      background: var(--accent); color: #fff;
+      font-size: 13px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
 
-    .one {
-      font-size: 15px;
-      color: var(--muted);
-      margin-bottom: 14px;
-    }
+    .one { font-size: 14px; color: var(--sub); margin-bottom: 14px; }
+    .step p { font-size: 14px; }
+    .step p + p { margin-top: 6px; }
+    b { font-weight: 600; color: var(--ink); }
 
     .shot {
       position: relative;
@@ -135,317 +136,229 @@
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid var(--line);
-      background: #eef2f6;
+      background: var(--canvas);
     }
+    .shot img { display: block; width: 100%; height: auto; }
+    .shot svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+    .shot.small { max-width: 300px; background: var(--canvas); }
 
-    .shot img {
-      display: block;
-      width: 100%;
-      height: auto;
+    .legend { list-style: none; margin: 12px 0 0; display: grid; gap: 6px; font-size: 13px; color: var(--sub); }
+    .legend li { display: flex; gap: 8px; align-items: baseline; }
+    .legend .dot {
+      flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+      background: var(--mark); color: #fff; font-size: 11px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center; transform: translateY(4px);
     }
+    .legend b { color: var(--ink); }
 
-    .shot svg {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
+    .shot-pair { display: grid; grid-template-columns: 300px 1fr; gap: 18px; align-items: start; }
 
-    .shot-svg {
-      display: block;
-      width: 100%;
-      height: auto;
-      background: #f3f5f8;
-    }
+    .rules { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 8px; }
+    .rule { border-radius: 12px; padding: 14px 12px; text-align: center; font-weight: 600; font-size: 14px; }
+    .rule b { display: block; font-size: 12px; font-weight: 500; margin-bottom: 4px; color: inherit; }
+    .off { background: var(--green-bg); color: var(--green); }
+    .on { background: var(--red-bg); color: var(--red); }
 
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
+    .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+    .feature { padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface2); }
+    .feature h3 { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+    .feature p, .note { font-size: 13px; line-height: 1.7; color: var(--sub); }
+    .feature .result { margin-top: 8px; font-weight: 600; color: var(--ink2); }
+    .note { margin: 14px 0; padding: 12px 16px; background: var(--accent-soft); border-radius: 10px; color: #3d3480; }
+    .note + .shot, .feature-grid + .shot { margin-top: 16px; }
 
-    .rules {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-      margin-top: 8px;
-    }
-
-    .rule {
-      border-radius: 14px;
-      padding: 14px 12px;
-      text-align: center;
-      font-weight: 700;
-      font-size: 14px;
-    }
-
-    .rule b { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
-    .off { background: #eef4f1; color: #3d6b5c; }
-    .on { background: var(--red-soft); color: var(--red); }
-
-    .note + .shot { margin-top: 18px; }
-    .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
-    .feature { padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: #f3f6fa; }
-    .feature h3 { font-size: 15px; color: var(--navy); margin-bottom: 8px; }
-    .feature p, .note { font-size: 14px; line-height: 1.7; color: var(--muted); }
-    .feature .result { margin-top: 10px; font-weight: 700; color: var(--ink); }
-    .note { padding: 14px 16px; border-left: 3px solid #8da2bc; background: #eef2f7; border-radius: 0 10px 10px 0; }
-    .update-example { margin: 18px 0; padding: 24px; background: #e8edf3; border: 1px solid var(--line); border-radius: 14px; }
-    .example-dialog { max-width: 560px; margin: 0 auto; padding: 24px; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; }
-    .example-label { font-size: 12px; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
-    .example-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .update-example { margin: 16px 0; padding: 22px; background: var(--canvas); border-radius: 12px; }
+    .example-dialog { max-width: 520px; margin: 0 auto; padding: 22px 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,.08); }
+    .example-label { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+    .example-title { font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
     .example-detail { font-size: 13px; color: var(--muted); }
-    .example-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px; flex-wrap: wrap; }
-    .example-check { font-size: 13px; font-weight: 700; color: var(--navy); background: #e8edf3; border-radius: 8px; padding: 10px 12px; }
+    .example-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+    .example-check { font-size: 13px; color: var(--ink2); outline: 3px solid var(--mark); outline-offset: 4px; border-radius: 6px; }
     .example-buttons { display: flex; gap: 8px; }
-    .example-button { padding: 10px 20px; font-size: 13px; font-weight: 700; background: #e8edf3; border-radius: 10px; color: var(--navy); }
-    .example-button.primary { background: var(--navy); color: #fff; }
-    figcaption { margin-top: 12px; text-align: center; font-size: 12px; color: var(--muted); }
-    .update-steps { margin: 16px 0 18px 22px; color: var(--ink); font-size: 14px; line-height: 1.7; }
-    .update-steps li { padding-left: 4px; margin-bottom: 8px; }
+    .example-button { padding: 9px 20px; font-size: 13px; font-weight: 500; background: var(--surface); border: 1px solid #e0ded8; border-radius: 10px; color: var(--ink); }
+    .example-button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    figcaption { margin-top: 12px; text-align: center; font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .update-steps { margin: 14px 0 6px 20px; color: var(--ink2); font-size: 14px; line-height: 1.7; }
+    .update-steps li { padding-left: 4px; margin-bottom: 6px; }
 
-    footer {
-      text-align: center;
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 8px;
+    .toast-demo {
+      display: flex; gap: 12px; align-items: flex-start; max-width: 380px; margin: 14px 0 4px;
+      padding: 14px 12px 16px 16px; background: #1c1b19; color: #fff; border-radius: 12px; position: relative;
+      box-shadow: 0 10px 24px rgba(0,0,0,.18);
     }
+    .toast-demo .icon { width: 22px; height: 22px; border-radius: 50%; background: #d97706; color: #fff; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .toast-demo strong { display: block; font-size: 13px; font-weight: 600; }
+    .toast-demo span.msg { font-size: 13px; color: #d9d6ce; }
+    .toast-demo .x { margin-left: auto; color: #9a978f; font-size: 13px; }
+    .toast-demo .bar { position: absolute; left: 12px; right: 40%; bottom: 0; height: 3px; background: #d97706; border-radius: 2px; }
 
-    @media (max-width: 720px) {
-      .grid-2, .rules, .feature-grid { grid-template-columns: 1fr; }
+    footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8px; }
+
+    @media (max-width: 760px) {
+      .rules, .feature-grid, .shot-pair { grid-template-columns: 1fr; }
       .update-example { padding: 14px; }
-      .example-dialog { padding: 18px; }
-      h1 { font-size: 26px; }
+      h1 { font-size: 22px; }
       .hint { display: none; }
     }
 
     @page { size: A4; margin: 12mm; }
 
     @media print {
-      html, body { background: #fff; }
-      .toolbar { display: none !important; }
+      .toolbar, .toc { display: none !important; }
       .wrap { max-width: none; padding: 0; }
-      .step { box-shadow: none; margin-bottom: 16px; }
+      .step { margin-bottom: 14px; }
       .shot { break-inside: avoid; }
       * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   </style>
 </head>
 <body>
-  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
-    <defs>
-      <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto">
-        <path d="M0,1.5 L11,6 L0,10.5 Z" fill="#e03131" />
-      </marker>
-    </defs>
-  </svg>
-
   <div class="toolbar">
     <span class="hint">인쇄 창에서 대상을 「PDF로 저장」으로 고르세요</span>
-    <button class="btn-pdf" type="button" onclick="window.print()">PDF로 저장</button>
+    <button type="button" onclick="window.print()">PDF로 저장</button>
   </div>
 
   <main class="wrap">
     <header class="hero">
       <span class="badge">TEIA</span>
-      <h1>아맛다보고서</h1>
+      <h1>아맛다보고서 사용 매뉴얼</h1>
       <p class="lead">신청은 했는데 보고서를 안 쓴 건을 찾아 알려 줍니다.</p>
+      <nav class="toc" aria-label="목차">
+        <a href="#login">1 로그인</a>
+        <a href="#dashboard">2 미작성 목록</a>
+        <a href="#report">3 보고서 작성</a>
+        <a href="#mail">4 메일</a>
+        <a href="#settings">5 메뉴 · 환경설정</a>
+        <a href="#tray">6 트레이 · 종료</a>
+        <a href="#alerts">7 알림</a>
+        <a href="#update-guide">8 업데이트</a>
+      </nav>
     </header>
 
-    <section class="step">
+    <section class="step" id="login">
       <h2><span class="num">1</span> 로그인</h2>
       <p class="one">회사 ERP 아이디와 비밀번호를 입력하고 로그인합니다.</p>
-      <figure class="shot">
-        <img src="images/01-login.png" alt="로그인 화면" width="886" height="753" />
-        <svg viewBox="0 0 886 753" preserveAspectRatio="none">
-          <rect x="252" y="328" width="380" height="44" rx="12" fill="none" stroke="#e03131" stroke-width="4" />
-          <rect x="252" y="412" width="380" height="44" rx="12" fill="none" stroke="#e03131" stroke-width="4" />
-          <rect x="252" y="478" width="380" height="46" rx="12" fill="none" stroke="#e03131" stroke-width="5" />
-          <line x1="720" y1="350" x2="642" y2="350" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
-          <line x1="720" y1="434" x2="642" y2="434" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
-          <line x1="720" y1="501" x2="642" y2="501" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
-          <g transform="translate(728,332)">
-            <rect width="132" height="36" rx="8" fill="#e03131" />
-            <text x="66" y="24" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">아이디</text>
-          </g>
-          <g transform="translate(728,416)">
-            <rect width="132" height="36" rx="8" fill="#e03131" />
-            <text x="66" y="24" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">비밀번호</text>
-          </g>
-          <g transform="translate(728,483)">
-            <rect width="132" height="36" rx="8" fill="#e03131" />
-            <text x="66" y="24" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">여기 클릭</text>
-          </g>
-        </svg>
-      </figure>
+      <!-- shot:01-login --><figure><div class="shot"><img src="images/01-login.png" alt="로그인 화면" width="1186" height="773" /><svg viewBox="0 0 1186 773" preserveAspectRatio="none" aria-hidden="true"><rect x="420" y="378" width="346" height="52" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="420" cy="378" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="420" y="383" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">1</text><rect x="420" y="463" width="346" height="52" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="420" cy="463" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="420" y="468" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">2</text><rect x="420" y="531" width="346" height="52" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="420" cy="531" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="420" y="536" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">3</text></svg></div><ol class="legend"><li><span class="dot">1</span><span><b>아이디</b> — ERP 아이디를 입력합니다.</span></li><li><span class="dot">2</span><span><b>비밀번호</b> — ERP 비밀번호를 입력합니다.</span></li><li><span class="dot">3</span><span><b>로그인</b>을 누릅니다. Enter 키로도 됩니다.</span></li></ol></figure><!-- /shot -->
+      <p class="note">환경설정에서 <b>자동 로그인</b>을 켜 두면 다음부터는 이 화면 없이 바로 시작합니다.</p>
     </section>
 
-    <section class="step">
+    <section class="step" id="dashboard">
       <h2><span class="num">2</span> 미작성 목록</h2>
-      <p class="one">카드를 누르면 기존에 작성한 신청서가 내장 웹뷰어에 표시됩니다.</p>
+      <p class="one">로그인하면 작성하지 않은 출장·휴일근무 보고서와 대체휴가 요청서를 한 화면에 모아 보여 줍니다.</p>
+      <!-- shot:02-dashboard --><figure><div class="shot"><img src="images/02-dashboard.png" alt="미작성 목록" width="1186" height="773" /><svg viewBox="0 0 1186 773" preserveAspectRatio="none" aria-hidden="true"><rect x="270" y="176" width="849" height="76" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="270" cy="176" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="270" y="181" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">1</text><rect x="270" y="432" width="849" height="110" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="270" cy="432" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="270" y="437" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">2</text><rect x="863" y="590" width="173" height="40" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="863" cy="590" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="863" y="595" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">3</text><rect x="1032" y="488" width="71" height="40" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="1032" cy="488" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="1032" y="493" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">4</text><rect x="1008" y="116" width="111" height="44" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="1008" cy="116" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="1008" y="121" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">5</text></svg></div><ol class="legend"><li><span class="dot">1</span><span><b>안내 배너</b> — 지금 작성해야 할 보고서 수를 알려 줍니다. <b>알림 설정</b>으로 환경설정을 엽니다.</span></li><li><span class="dot">2</span><span><b>항목</b>을 누르면 연결된 신청서가 내장 웹뷰어에 열립니다. 오른쪽 칩이 상태(작성 필요 · 진행 중 · 예정)입니다.</span></li><li><span class="dot">3</span><span><b>2시간 동안 알리지 않음</b> — 이 항목의 알림만 잠시 멈춥니다.</span></li><li><span class="dot">4</span><span><b>삭제</b> — 목록과 알림에서 영구 제외합니다 (ERP 문서는 그대로).</span></li><li><span class="dot">5</span><span><b>새로고침</b> — ERP에서 다시 조회합니다.</span></li></ol></figure><!-- /shot -->
       <div class="feature-grid">
         <article class="feature">
           <h3>잠시 알림을 쉬고 싶을 때</h3>
-          <p><b>2시간 동안 알리지 않음</b>을 체크하세요. 카드는 목록에 남고, 해당 항목의 알림만 잠시 멈춥니다.</p>
+          <p><b>2시간 동안 알리지 않음</b>을 체크하세요. 항목은 목록에 남고, 그 항목의 알림만 잠시 멈춥니다.</p>
           <p class="result">체크 해제 또는 2시간 경과 → 다음 주기부터 다시 알림</p>
         </article>
         <article class="feature">
           <h3>더 이상 표시하고 싶지 않을 때</h3>
-          <p>카드의 <b>삭제</b>를 누르세요. 해당 항목은 목록과 알림에서 영구 제외되며, 재시작해도 유지됩니다.</p>
+          <p>항목의 <b>삭제</b>를 누르세요. 그 항목은 목록과 알림에서 영구 제외되며, 다시 실행해도 유지됩니다.</p>
           <p class="result">앱의 목록에서만 제외 · ERP 문서는 그대로 유지</p>
         </article>
       </div>
-      <p class="note">2시간 알림 중지는 새로고침·재시작으로 연장되지 않습니다. 삭제는 해당 종류와 기간의 항목에 적용되며, 다른 날짜의 새 항목은 계속 표시됩니다.</p>
-      <figure class="shot">
-        <img src="images/02-dashboard.png" alt="미작성 목록" width="886" height="753" />
-        <svg viewBox="0 0 886 753" preserveAspectRatio="none">
-          <rect x="56" y="74" width="804" height="116" rx="18" fill="none" stroke="#e03131" stroke-width="5" />
-          <line x1="458" y1="36" x2="458" y2="68" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
-          <g transform="translate(358,4)">
-            <rect width="200" height="34" rx="8" fill="#e03131" />
-            <text x="100" y="23" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">이 카드를 누르세요</text>
-          </g>
-          <line x1="430" y1="218" x2="250" y2="172" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
-          <g transform="translate(360,218)">
-            <rect width="150" height="34" rx="8" fill="#e03131" />
-            <text x="75" y="23" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Noto Sans KR, sans-serif">알림 없음</text>
-          </g>
-          <rect x="56" y="248" width="804" height="118" rx="18" fill="none" stroke="#e03131" stroke-width="3" stroke-dasharray="8 6" />
-          <line x1="720" y1="400" x2="720" y2="372" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
-          <g transform="translate(646,404)">
-            <rect width="148" height="34" rx="8" fill="#e03131" />
-            <text x="74" y="23" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Noto Sans KR, sans-serif">시작 전도 동일</text>
-          </g>
-        </svg>
-      </figure>
+      <p class="note">상태 칩으로 지금 써야 하는지 알 수 있습니다. <b>작성 필요</b>(기간이 끝남) · <b>진행 중</b> · <b>예정</b> · <b>요청서 없음/시간 오류</b>(대체휴가). 2시간 알림 중지는 새로고침·재시작으로 연장되지 않습니다.</p>
     </section>
 
-    <section class="step">
+    <section class="step" id="report">
       <h2><span class="num">3</span> 신청서 확인 · 보고서 작성</h2>
-      <p class="one">내장 웹뷰어에서 기존 신청서를 확인한 뒤, ERP에서 보고서를 작성·상신하세요.</p>
-      <p>카드 클릭은 신청서 원문 조회입니다. 연결된 신청서가 없는 경우에는 ERP에서 확인하라는 안내가 표시됩니다. 아래는 ERP에서 보고서를 작성할 때의 참고 화면입니다.</p>
-      <figure class="shot">
+      <p class="one">항목을 누르면 기존 신청서가 내장 웹뷰어에 열립니다. 내용을 확인한 뒤 ERP에서 보고서를 작성·상신하세요.</p>
+      <p>연결된 신청서가 없으면 ERP에서 확인하라는 안내가 창 오른쪽 아래에 잠깐 표시됩니다. 아래는 ERP에서 보고서를 작성할 때의 참고 화면입니다.</p>
+      <figure class="shot" style="margin-top:14px">
         <img src="images/03-report.png" alt="보고서 작성 화면" width="1006" height="839" />
         <svg viewBox="0 0 1006 839" preserveAspectRatio="none">
           <rect x="96" y="164" width="790" height="44" rx="8" fill="none" stroke="#e03131" stroke-width="4" />
           <line x1="500" y1="120" x2="500" y2="158" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
           <g transform="translate(410,80)">
             <rect width="180" height="34" rx="8" fill="#e03131" />
-            <text x="90" y="23" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">직접 입력</text>
+            <text x="90" y="23" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">직접 입력</text>
           </g>
           <rect x="96" y="636" width="820" height="38" rx="8" fill="none" stroke="#e03131" stroke-width="4" />
           <line x1="250" y1="720" x2="300" y2="680" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
           <g transform="translate(78,724)">
             <rect width="220" height="34" rx="8" fill="#e03131" />
-            <text x="110" y="23" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">출장기간 · 일수 확인</text>
+            <text x="110" y="23" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">출장기간 · 일수 확인</text>
           </g>
           <circle cx="946" cy="118" r="26" fill="none" stroke="#e03131" stroke-width="5" />
           <line x1="946" y1="66" x2="946" y2="90" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
           <g transform="translate(876,26)">
             <rect width="140" height="34" rx="8" fill="#e03131" />
-            <text x="70" y="23" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Noto Sans KR, sans-serif">다 되면 상신</text>
+            <text x="70" y="23" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">다 되면 상신</text>
           </g>
+          <defs>
+            <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto">
+              <path d="M0,1.5 L11,6 L0,10.5 Z" fill="#e03131" />
+            </marker>
+          </defs>
         </svg>
       </figure>
     </section>
 
-    <section class="step">
-      <h2><span class="num">4</span> 메뉴 · 환경설정</h2>
-      <p class="one">왼쪽 ☰ 을 누르면 설정, 로그아웃, 종료가 나옵니다.</p>
-      <article class="feature" style="margin-bottom:18px">
-        <h3>이메일 목록 · 받은 메일 확인</h3>
-        <p>메뉴의 <b>이메일 목록</b>을 누르면 현재 로그인한 계정의 받은메일함이 메인 창 안에 표시됩니다. 제목·보낸 사람·받은 시각·첨부 여부를 볼 수 있으며, 안 읽은 메일은 강조 표시됩니다.</p>
-        <p class="result">최신순 100건씩 표시 · 이전/다음으로 이동 · 새로고침으로 최신 목록 조회</p>
-        <p>메일을 클릭하거나 선택 후 <b>Enter</b>를 누르면 같은 창에서 내장 웹뷰어로 본문이 열립니다. <b>← 메일 목록</b>을 누르면 보던 목록으로 돌아갑니다. 진행 중인 다운로드는 취소되고 이미 저장한 파일은 유지됩니다. 메뉴의 <b>미작성 목록</b>으로 대시보드에 돌아갈 수 있습니다. HTML이 없는 메일은 일반 텍스트로 표시됩니다.</p>
-        <p>메일을 열면 외부 이미지도 자동으로 표시됩니다. 본문의 웹 링크는 기본 브라우저로 열립니다.</p>
-        <p>본문 위 <b>첨부파일</b> 목록에서 파일명과 용량을 확인할 수 있습니다. <b>다운로드</b>를 눌러 저장 위치를 고르면 파일을 받을 수 있으며, 진행 중에는 <b>다운로드 취소</b>로 중단할 수 있습니다. 저장이 끝나면 완료 메시지가 표시됩니다.</p>
-        <p>첨부가 여러 개면 <b>전체 다운로드</b>를 눌러 저장 폴더를 한 번만 선택하세요. 같은 이름의 파일은 번호를 붙여 저장합니다. 취소해도 이미 저장한 파일은 유지되며, 실패한 파일은 개별 다운로드로 다시 받을 수 있습니다.</p>
-      </article>
-      <div class="grid-2">
-        <figure class="shot">
-          <img src="images/04-menu.png" alt="사이드 메뉴" width="886" height="753" />
-          <svg viewBox="0 0 886 753" preserveAspectRatio="none">
-            <circle cx="28" cy="56" r="20" fill="none" stroke="#e03131" stroke-width="4" />
-            <rect x="4" y="36" width="228" height="713" rx="8" fill="none" stroke="#e03131" stroke-width="4" />
-            <line x1="360" y1="680" x2="236" y2="680" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
-            <g transform="translate(368,662)">
-              <rect width="200" height="36" rx="8" fill="#e03131" />
-              <text x="100" y="24" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Noto Sans KR, sans-serif">설정 / 로그아웃 / 종료</text>
-            </g>
-          </svg>
-        </figure>
-        <figure class="shot">
-          <img src="images/05-settings.png" alt="환경설정" width="886" height="753" />
-          <svg viewBox="0 0 886 753" preserveAspectRatio="none">
-            <rect x="64" y="86" width="790" height="180" rx="12" fill="none" stroke="#e03131" stroke-width="4" />
-            <g transform="translate(720,52)">
-              <rect width="88" height="30" rx="8" fill="#e03131" />
-              <text x="44" y="21" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Noto Sans KR, sans-serif">알림</text>
-            </g>
-            <rect x="64" y="308" width="520" height="128" rx="10" fill="none" stroke="#e03131" stroke-width="3" />
-            <line x1="700" y1="372" x2="594" y2="372" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
-            <g transform="translate(708,354)">
-              <rect width="150" height="36" rx="8" fill="#e03131" />
-              <text x="75" y="24" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Noto Sans KR, sans-serif">자동 로그인</text>
-            </g>
-          </svg>
-        </figure>
+    <section class="step" id="mail">
+      <h2><span class="num">4</span> 메일</h2>
+      <p class="one">왼쪽 메뉴의 <b>메일</b>을 누르면 받은메일함이 열립니다. 왼쪽에 목록, 오른쪽에 본문이 함께 보여서 목록으로 돌아가지 않고 다른 메일을 바로 열 수 있습니다.</p>
+      <!-- shot:04-mail --><figure><div class="shot"><img src="images/04-mail.png" alt="메일 화면 (왼쪽 목록, 오른쪽 본문)" width="1186" height="773" /><svg viewBox="0 0 1186 773" preserveAspectRatio="none" aria-hidden="true"><rect x="254" y="64" width="350" height="683" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="254" cy="64" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="254" y="69" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">1</text><rect x="619" y="40" width="557" height="723" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="619" cy="40" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="619" y="45" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">2</text><rect x="647" y="585" width="501" height="140" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="647" cy="585" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="647" y="590" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">3</text><rect x="1084" y="64" width="64" height="42" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="1084" cy="64" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="1084" y="69" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">4</text></svg></div><ol class="legend"><li><span class="dot">1</span><span><b>메일 목록</b> — 검색과 필터(전체 · 안 읽음 · 첨부파일), 보라색 점은 안 읽은 메일입니다.</span></li><li><span class="dot">2</span><span><b>본문</b> — 고른 메일이 바로 여기 열립니다. ↑ ↓ 키로 다음 메일로 넘어갑니다.</span></li><li><span class="dot">3</span><span><b>첨부파일</b> — 파일별 <b>다운로드</b> 또는 <b>모두 다운로드</b>.</span></li><li><span class="dot">4</span><span><b>닫기</b> — 본문을 닫습니다. 목록 선택은 그대로 남습니다.</span></li></ol></figure><!-- /shot -->
+      <div class="feature-grid">
+        <article class="feature">
+          <h3>목록 · 검색</h3>
+          <p>최신순 100건씩 보여 주며 <b>이전/다음</b>으로 페이지를 넘깁니다. 안 읽은 메일은 보라색 점과 굵은 글씨로 표시됩니다. 검색 상자와 <b>전체 · 안 읽음 · 첨부파일</b> 필터는 지금 페이지 안에서 바로 거릅니다.</p>
+          <p class="result">메일을 누르거나 ↑ ↓ 키로 고르면 오른쪽에 본문이 열림</p>
+        </article>
+        <article class="feature">
+          <h3>첨부파일</h3>
+          <p>본문 아래의 <b>다운로드</b>로 파일마다 저장 위치를 고르거나, 여러 개면 <b>모두 다운로드</b>로 폴더를 한 번만 고르세요. 같은 이름은 번호를 붙여 저장합니다. 받는 중에는 <b>다운로드 취소</b>로 멈출 수 있습니다.</p>
+          <p class="result">받는 동안은 목록이 잠깁니다 (다운로드가 끊기지 않게)</p>
+        </article>
+      </div>
+      <p class="note">가운데 구분선을 끌면 목록 폭을 바꿀 수 있습니다. 본문의 외부 이미지는 자동으로 표시되고, 웹 링크는 기본 브라우저로 열립니다. <b>닫기</b>를 누르면 본문만 닫히고 목록 선택은 그대로 남습니다.</p>
+    </section>
+
+    <section class="step" id="settings">
+      <h2><span class="num">5</span> 메뉴 · 환경설정</h2>
+      <p class="one">왼쪽 메뉴는 항상 보입니다. 위쪽은 화면 이동(미작성 목록 · 메일 · 사용자 매뉴얼), 아래쪽은 업데이트 확인 · 환경설정 · 로그아웃 · 종료하기입니다. 이 매뉴얼도 같은 창 안에서 열립니다.</p>
+      <!-- shot:05-settings --><figure><div class="shot"><img src="images/05-settings.png" alt="환경설정" width="1186" height="773" /><svg viewBox="0 0 1186 773" preserveAspectRatio="none" aria-hidden="true"><rect x="270" y="150" width="429" height="226" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="270" cy="150" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="270" y="155" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">1</text><rect x="270" y="384" width="429" height="153" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="270" cy="384" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="270" y="389" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">2</text><rect x="707" y="150" width="429" height="197" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="707" cy="150" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="707" y="155" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">3</text><rect x="707" y="355" width="429" height="187" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="707" cy="355" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="707" y="360" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">4</text></svg></div><ol class="legend"><li><span class="dot">1</span><span><b>알림</b> — Windows 알림, 확인 간격(초), 알림이 오면 창 띄우기.</span></li><li><span class="dot">2</span><span><b>시작</b> — Windows 시작 시 자동 실행, 트레이로 시작.</span></li><li><span class="dot">3</span><span><b>세션</b> — 네트워크가 다시 연결돼도 로그인 유지, <b>자동 로그인</b>.</span></li><li><span class="dot">4</span><span><b>조회 범위</b> — 신청서·보고서를 이번 달 기준 몇 달 전후까지 볼지 정합니다.</span></li></ol></figure><!-- /shot -->
+      <p class="note">스위치와 숫자를 바꾸면 <b>바로 저장</b>됩니다. 따로 저장하거나 닫는 버튼은 없고, 다른 메뉴로 이동하면 됩니다.</p>
+    </section>
+
+    <section class="step" id="tray">
+      <h2><span class="num">6</span> 트레이 · 종료</h2>
+      <p class="one">창의 X를 누르면 꺼지지 않고 화면 오른쪽 아래 트레이로 들어갑니다. 트레이 아이콘을 누르면 메뉴가 열립니다.</p>
+      <div class="shot-pair">
+        <!-- shot:06-tray --><figure><div class="shot small"><img src="images/06-tray.png" alt="트레이 메뉴" width="440" height="228" /><svg viewBox="0 0 440 228" preserveAspectRatio="none" aria-hidden="true"><rect x="34" y="34" width="372" height="84" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="34" cy="34" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="34" y="39" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">1</text><rect x="34" y="110" width="372" height="84" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="34" cy="110" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="34" y="115" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">2</text></svg></div><ol class="legend"><li><span class="dot">1</span><span><b>GUI 보이기</b> — 창을 다시 엽니다.</span></li><li><span class="dot">2</span><span><b>종료하기</b> — 프로그램을 끕니다.</span></li></ol></figure><!-- /shot -->
+        <div>
+          <p>완전히 끄려면 트레이 메뉴나 왼쪽 메뉴의 <b>종료하기</b>를 누르세요. 확인 창에서 <b>예</b>를 고르면 프로그램이 꺼집니다.</p>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <!-- shot:07-exit --><figure><div class="shot"><img src="images/07-exit.png" alt="종료 확인" width="1186" height="773" /><svg viewBox="0 0 1186 773" preserveAspectRatio="none" aria-hidden="true"><rect x="682" y="416" width="96" height="48" rx="10" fill="none" stroke="#e03131" stroke-width="3" /><circle cx="682" cy="416" r="13" fill="#e03131" stroke="#fff" stroke-width="2" /><text x="682" y="421" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="IBM Plex Sans KR, Malgun Gothic, sans-serif">1</text></svg></div><ol class="legend"><li><span class="dot">1</span><span><b>예</b>를 누르면 완전히 꺼집니다. <b>아니오</b>나 바깥을 누르면 취소됩니다.</span></li></ol></figure><!-- /shot -->
       </div>
     </section>
 
-    <section class="step">
-      <h2><span class="num">5</span> 트레이 · 종료</h2>
-      <p class="one">창을 닫으면 오른쪽 아래 트레이로 갑니다. 아이콘을 누르면 메뉴가 열립니다.</p>
-      <figure class="shot">
-        <svg class="shot-svg" viewBox="0 0 620 170" role="img" aria-label="트레이 메뉴 설명">
-          <image href="images/06-tray.png" x="16" y="14" width="239" height="142" />
-          <rect x="32" y="26" width="168" height="42" rx="10" fill="none" stroke="#e03131" stroke-width="3" />
-          <line x1="204" y1="47" x2="278" y2="47" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
-          <g transform="translate(286,29)">
-            <rect width="310" height="36" rx="8" fill="#e03131" />
-            <text x="155" y="24" text-anchor="middle" fill="#fff" font-size="15" font-weight="700" font-family="Noto Sans KR, sans-serif">GUI 보이기 = 창 다시 열기</text>
-          </g>
-          <rect x="32" y="86" width="168" height="42" rx="10" fill="none" stroke="#e03131" stroke-width="3" />
-          <line x1="204" y1="107" x2="278" y2="107" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
-          <g transform="translate(286,89)">
-            <rect width="310" height="36" rx="8" fill="#e03131" />
-            <text x="155" y="24" text-anchor="middle" fill="#fff" font-size="15" font-weight="700" font-family="Noto Sans KR, sans-serif">종료하기 = 프로그램 끄기</text>
-          </g>
-        </svg>
-      </figure>
-      <p class="one" style="margin-top:16px">종료하기를 누르면 확인 창이 뜹니다. 예를 고르면 완전히 꺼집니다.</p>
-      <figure class="shot">
-        <img src="images/07-exit.png" alt="종료 확인" width="886" height="753" />
-        <svg viewBox="0 0 886 753" preserveAspectRatio="none">
-          <rect x="250" y="308" width="384" height="168" rx="22" fill="none" stroke="#e03131" stroke-width="5" />
-          <line x1="740" y1="430" x2="640" y2="430" stroke="#e03131" stroke-width="3" marker-end="url(#arrow)" />
-          <g transform="translate(748,412)">
-            <rect width="120" height="36" rx="8" fill="#e03131" />
-            <text x="60" y="24" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="Noto Sans KR, sans-serif">예 = 종료</text>
-          </g>
-        </svg>
-      </figure>
-    </section>
-
-    <section class="step">
-      <h2><span class="num">6</span> 알림이 가는 때</h2>
-      <p class="one">목록에는 보여도, 알림은 기간이 끝난 뒤에만 갑니다.</p>
+    <section class="step" id="alerts">
+      <h2><span class="num">7</span> 알림</h2>
+      <p class="one">목록에는 보여도, Windows 알림은 기간이 끝난 뒤에만 갑니다.</p>
       <div class="rules">
         <div class="rule off"><b>출장·휴일근무 전</b>알림 없음</div>
         <div class="rule off"><b>진행 중</b>알림 없음</div>
         <div class="rule on"><b>끝난 뒤 미작성</b>알림</div>
       </div>
+      <p style="margin-top:16px">프로그램 안의 안내(업데이트 결과, 저장 실패 등)는 창 오른쪽 아래에 잠깐 떴다 사라집니다. 처음 6초 동안 보이고, 글이 길면 최대 20초까지 늘어납니다. 마우스를 올려 두면 멈추고, 오른쪽 <b>×</b>를 누르면 바로 닫힙니다.</p>
+      <div class="toast-demo" aria-label="안내 메시지 예시">
+        <span class="icon">!</span>
+        <div><strong>업데이트 확인</strong><span class="msg">업데이트를 확인하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.</span></div>
+        <span class="x">✕</span>
+        <span class="bar"></span>
+      </div>
     </section>
 
     <section class="step" id="update-guide">
-      <h2><span class="num">7</span> 업데이트</h2>
-      <p class="one">창 아래의 새 버전 안내를 누르면 업데이트 확인 창이 열립니다.</p>
+      <h2><span class="num">8</span> 업데이트</h2>
+      <p class="one">새 버전이 나오면 왼쪽 메뉴 맨 아래에 <b>새 버전이 있습니다</b> 안내가 나타납니다. 누르면 업데이트 확인 창이 열립니다.</p>
       <figure class="update-example" aria-label="조용히 업데이트하기 옵션 위치 예시">
         <div class="example-dialog">
           <p class="example-label">업데이트</p>
-          <p class="example-title">새 버전을 설치할까요?</p>
+          <p class="example-title">아맛다보고서 새 버전을 설치할까요?</p>
           <p class="example-detail">설치를 시작하면 프로그램이 종료됩니다.</p>
           <div class="example-actions">
             <span class="example-check">☑ 조용히 업데이트하기</span>
@@ -455,16 +368,16 @@
             </div>
           </div>
         </div>
-        <figcaption>업데이트 확인 창 예시 · 왼쪽 체크박스로 설치 방식을 선택합니다.</figcaption>
+        <figcaption>업데이트 확인 창 예시 · 왼쪽 체크박스로 설치 방식을 고릅니다.</figcaption>
       </figure>
       <div class="feature-grid">
         <article class="feature">
           <h3>체크하면 · 조용히 업데이트</h3>
-          <p>현재 설치된 폴더에 자동으로 업데이트합니다. 경로 선택과 설치 완료 화면을 거치지 않고, 완료되면 트레이로 다시 실행됩니다.</p>
+          <p>지금 설치된 폴더에 자동으로 업데이트합니다. 경로 선택과 설치 완료 화면을 거치지 않고, 끝나면 트레이로 다시 실행됩니다.</p>
         </article>
         <article class="feature">
           <h3>체크하지 않으면 · 일반 설치</h3>
-          <p>기존 설치 화면이 열립니다. 설치 폴더를 선택하고 설치를 진행한 뒤, 완료 화면에서 실행 여부를 고릅니다.</p>
+          <p>설치 화면이 열립니다. 설치 폴더를 고르고 설치한 뒤, 완료 화면에서 실행 여부를 고릅니다.</p>
         </article>
       </div>
       <ol class="update-steps">
@@ -472,7 +385,7 @@
         <li>Windows 관리자 권한 확인 창이 나타나면 허용합니다.</li>
         <li>업데이트가 끝나면 트레이 아이콘에서 창을 다시 열 수 있습니다.</li>
       </ol>
-      <p class="note">체크박스는 1.8.0부터 표시됩니다. 조용한 업데이트 중에도 Windows 관리자 권한 확인은 필요하며, 설치에 실패하면 오류 안내가 표시됩니다.</p>
+      <p class="note">조용한 업데이트 중에도 Windows 관리자 권한 확인은 필요하며, 설치에 실패하면 오류 안내가 표시됩니다. 왼쪽 메뉴의 <b>업데이트 확인</b>으로 언제든 직접 확인할 수 있습니다.</p>
     </section>
 
     <footer>아맛다보고서 · 사용 매뉴얼</footer>

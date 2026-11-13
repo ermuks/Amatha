@@ -23,7 +23,11 @@ public partial class MainWindow : Window
     private readonly Forms.NotifyIcon _tray = new();
     private TrayMenuWindow? _trayMenu;
     private MailView? _mailView;
-    private bool _showingMail;
+    private ManualView? _manualView;
+
+    /// <summary>콘텐츠 패널에 지금 보이는 화면 (환경설정은 그 위에 덮는 화면이라 따로 다룸)</summary>
+    private enum ShellContent { Dashboard, Mail, Manual }
+    private ShellContent _content = ShellContent.Dashboard;
     private bool _forceClose;
     private bool _hideToTrayAfterRender;
     private AppUpdateInfo? _availableUpdate;
@@ -232,7 +236,10 @@ public partial class MainWindow : Window
 
     public void NavigateToLogin()
     {
-        _mailView?.Dispose(); _mailView = null; MailHost.Content = null; _showingMail = false;
+        _mailView?.Dispose(); _mailView = null; MailHost.Content = null;
+        _manualView?.Dispose(); _manualView = null; ManualHost.Content = null;
+        _content = ShellContent.Dashboard;
+        Toast.DismissAll();
         AppRuntime.Current.ClearLogin();
         SidePanel.Visibility = Visibility.Collapsed;
         ApplyLoginChrome();
@@ -244,7 +251,7 @@ public partial class MainWindow : Window
 
     public void NavigateToDashboard(AmaranthSession session)
     {
-        _showingMail = false;
+        _content = ShellContent.Dashboard;
         SidePanel.Visibility = Visibility.Visible;
         ApplyShellChrome();
         SettingsOverlay.Visibility = Visibility.Collapsed;
@@ -398,6 +405,7 @@ public partial class MainWindow : Window
         if (_forceClose)
         {
             _mailView?.Dispose(); _mailView = null;
+            _manualView?.Dispose(); _manualView = null;
             _trayMenu?.Close();
             _tray.Visible = false;
             _tray.Dispose();
@@ -420,7 +428,7 @@ public partial class MainWindow : Window
             _mailView.UnreadCountChanged += UpdateMailBadge;
             MailHost.Content = _mailView;
         }
-        _showingMail = true;
+        _content = ShellContent.Mail;
         LeaveSettings();
         SetActiveNav(NavMail);
         UpdateContentVisibility();
@@ -430,7 +438,7 @@ public partial class MainWindow : Window
 
     private void ShowDashboard()
     {
-        _showingMail = false;
+        _content = ShellContent.Dashboard;
         LeaveSettings();
         SetActiveNav(NavDashboard);
         UpdateContentVisibility();
@@ -438,16 +446,40 @@ public partial class MainWindow : Window
 
     private void UpdateContentVisibility()
     {
-        RootFrame.Visibility = _showingMail ? Visibility.Collapsed : Visibility.Visible;
+        RootFrame.Visibility = _content == ShellContent.Dashboard ? Visibility.Visible : Visibility.Collapsed;
         // WebView2는 HWND를 사용하므로 WPF 설정·확인 창을 가리지 않도록 숨깁니다.
-        MailHost.Visibility = _showingMail && SettingsOverlay.Visibility != Visibility.Visible
-            && ConfirmOverlay.Visibility != Visibility.Visible ? Visibility.Visible : Visibility.Collapsed;
+        bool covered = SettingsOverlay.Visibility == Visibility.Visible || ConfirmOverlay.Visibility == Visibility.Visible;
+        MailHost.Visibility = _content == ShellContent.Mail && !covered ? Visibility.Visible : Visibility.Collapsed;
+        ManualHost.Visibility = _content == ShellContent.Manual && !covered ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    /// <summary>사용자 매뉴얼을 새 창 대신 메인 창 안에 엽니다. 다른 메뉴로 갔다 와도 읽던 위치가 유지됩니다.</summary>
     private void Manual_Click(object sender, RoutedEventArgs e)
     {
-        ManualWindow.Open(this);
+        if (_manualView == null)
+        {
+            string folder = ManualView.DefaultFolder;
+            if (!ManualView.Exists(folder))
+            {
+                // 이동하지 않으므로 원래 메뉴 선택을 되돌립니다.
+                SetActiveNav(CurrentNav());
+                Toast.Warning(this, "사용 매뉴얼 파일(ReadMe.html)을 찾을 수 없습니다. 프로그램이 있는 폴더를 확인해 주세요.", "사용자 매뉴얼");
+                return;
+            }
+
+            _manualView = new ManualView(folder);
+            ManualHost.Content = _manualView;
+        }
+
+        _content = ShellContent.Manual;
+        LeaveSettings();
+        SetActiveNav(NavManual);
+        UpdateContentVisibility();
     }
+
+    private RadioButton CurrentNav() =>
+        SettingsOverlay.Visibility == Visibility.Visible ? NavSettings
+        : _content switch { ShellContent.Mail => NavMail, ShellContent.Manual => NavManual, _ => NavDashboard };
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
@@ -476,6 +508,7 @@ public partial class MainWindow : Window
     {
         NavDashboard.IsChecked = ReferenceEquals(target, NavDashboard);
         NavMail.IsChecked = ReferenceEquals(target, NavMail);
+        NavManual.IsChecked = ReferenceEquals(target, NavManual);
         NavSettings.IsChecked = ReferenceEquals(target, NavSettings);
     }
 

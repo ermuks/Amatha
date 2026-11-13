@@ -1,0 +1,28 @@
+<UserControl x:Class="Amaranth10API.Views.ManualView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#FFFFFF">
+    <!--
+        사용자 매뉴얼을 메인 창의 흰 패널 안에서 보여 줍니다.
+        WebView2는 둥근 모서리로 잘리지 않으므로 위·아래를 16(패널 모서리 반지름)만큼 띄워 모서리에 겹치지 않게 합니다.
+    -->
+    <Grid>
+        <Grid x:Name="BrowserHost" Margin="0,16,0,16" />
+
+        <Border x:Name="LoadingOverlay" Background="#FFFFFF" Panel.ZIndex="1">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar x:Name="LoadingBar" Width="160" Height="4" IsIndeterminate="True"
+                             Foreground="#5847C9" Background="#ECEAE4" BorderThickness="0" />
+                <TextBlock x:Name="LoadingText"
+                           Margin="0,12,0,0"
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           MaxWidth="420"
+                           FontSize="13"
+                           Foreground="#5F5D57"
+                           Text="사용 매뉴얼을 여는 중…" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>
